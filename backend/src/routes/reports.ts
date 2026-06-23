@@ -20,7 +20,7 @@ router.get('/client/:clientId', async (req: Request, res: Response) => {
 
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
 
-  const chartData = client.evaluations.map((e) => ({
+  const chartData = client.evaluations.map((e: any) => ({
     date: e.examDate.toISOString().split('T')[0],
     weight: e.weight,
     skeletalMuscle: e.skeletalMuscle,
