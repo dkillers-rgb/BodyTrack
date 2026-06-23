@@ -39,7 +39,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (response.status === 401) {
     localStorage.removeItem('bodytrack_token');
     localStorage.removeItem('bodytrack_user');
-    window.location.href = '/login';
     throw new Error('Sessão expirada');
   }
 
