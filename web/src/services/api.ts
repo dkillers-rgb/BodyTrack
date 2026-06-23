@@ -1,16 +1,17 @@
 const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
+const apiPort = import.meta.env.VITE_API_PORT || '3001';
 const baseUrl = rawApiUrl.replace(/\/+$/, '');
 let API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
-// Runtime fallbacks: when Vercel build did not inject `VITE_API_URL`,
-// detect running host and point to the Render backend or localhost.
 try {
   if (rawApiUrl === '/api' && typeof window !== 'undefined') {
     const host = window.location.hostname || '';
-    if (host.includes('vercel.app')) {
+    if (window.location.protocol === 'file:' || !host) {
+      API_URL = `http://localhost:${apiPort}/api`;
+    } else if (host.includes('vercel.app')) {
       API_URL = 'https://bodytrack-ph0z.onrender.com/api';
     } else if (host === 'localhost' || host.startsWith('127.0.0.1')) {
-      API_URL = 'http://localhost:10000/api';
+      API_URL = `http://localhost:${apiPort}/api`;
     }
   }
 } catch (e) {

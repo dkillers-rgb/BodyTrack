@@ -13,7 +13,7 @@ import { asyncHandler } from '../lib/asyncHandler';
 const router = Router();
 router.use(authMiddleware);
 
-const uploadDir = process.env.UPLOAD_DIR || './uploads';
+const uploadDir = path.resolve(__dirname, '../', process.env.UPLOAD_DIR || './uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({

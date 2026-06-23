@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Aplicativo para leitura de QR Code de equipamentos de análise corporal",
+  "main": "electron/main.js",
   "workspaces": [
     "backend",
     "web"
@@ -10,11 +11,34 @@
   "scripts": {
     "build": "npm run build:web",
     "vercel-build": "npm run build:web && node -e \"const fs=require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist',{recursive:true,force:true}); fs.cpSync('web/dist','dist',{recursive:true});\"",
+    "dev:desktop": "npx concurrently \"npm run dev:backend\" \"npm run dev:web\" \"npx wait-on http://localhost:5173 && electron .\"",
+    "desktop:start": "electron .",
+    "desktop:build": "npm run build:backend && npm run build:web && electron-builder",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:web": "npm run dev --workspace=web",
     "build:backend": "npm run build --workspace=backend",
     "build:web": "npm run build --workspace=web",
     "db:migrate": "npm run db:migrate --workspace=backend",
     "db:studio": "npm run db:studio --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^26.3.0",
+    "electron-builder": "^24.7.0",
+    "electron-is-dev": "^2.0.0",
+    "wait-on": "^7.0.1"
+  },
+  "build": {
+    "appId": "com.bodytrack.desktop",
+    "productName": "BodyTrack",
+    "files": [
+      "electron/**/*",
+      "backend/dist/**/*",
+      "web/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis", "zip"]
+    }
   }
 }

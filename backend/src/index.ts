@@ -1,11 +1,22 @@
-import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
 import evaluationRoutes from './routes/evaluations';
 import reportRoutes from './routes/reports';
+
+const envPathLocal = path.resolve(__dirname, '../.env.local');
+const envPathDefault = path.resolve(__dirname, '../.env');
+const envPath = fs.existsSync(envPathLocal) ? envPathLocal : envPathDefault;
+
+dotenv.config({ path: envPath });
+
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+process.env.UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'bodytrack-local-secret';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
