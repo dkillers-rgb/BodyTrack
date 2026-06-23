@@ -3,11 +3,12 @@ import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../lib/auth';
 import { generateEvolutionAnalysis, generateLocalAnalysis } from '../services/aiService';
 import { parseClientId } from '../lib/parseId';
+import { asyncHandler } from '../lib/asyncHandler';
 
 const router = Router();
 router.use(authMiddleware);
 
-router.get('/client/:clientId', async (req: Request, res: Response) => {
+router.get('/client/:clientId', asyncHandler(async (req: Request, res: Response) => {
   const clientId = parseClientId(req.params.clientId);
   if (!clientId) return res.status(400).json({ error: 'ID inválido' });
 
@@ -53,9 +54,9 @@ router.get('/client/:clientId', async (req: Request, res: Response) => {
       lastExam: latest?.examDate,
     },
   });
-});
+}));
 
-router.get('/overview', async (req: Request, res: Response) => {
+router.get('/overview', asyncHandler(async (req: Request, res: Response) => {
   const [totalClients, totalEvaluations, recentEvaluations] = await Promise.all([
     prisma.client.count({ where: { userId: req.user!.userId } }),
     prisma.evaluation.count({ where: { client: { userId: req.user!.userId } } }),
@@ -68,6 +69,6 @@ router.get('/overview', async (req: Request, res: Response) => {
   ]);
 
   res.json({ totalClients, totalEvaluations, recentEvaluations });
-});
+}));
 
 export default router;

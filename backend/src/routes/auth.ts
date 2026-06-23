@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { signToken, authMiddleware } from '../lib/auth';
+import { asyncHandler } from '../lib/asyncHandler';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', asyncHandler(async (req: Request, res: Response) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -37,9 +38,9 @@ router.post('/register', async (req: Request, res: Response) => {
 
   const token = signToken({ userId: user.id, email: user.email, role: user.role });
   res.status(201).json({ user, token });
-});
+}));
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -56,15 +57,15 @@ router.post('/login', async (req: Request, res: Response) => {
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     token,
   });
-});
+}));
 
-router.get('/me', authMiddleware, async (req: Request, res: Response) => {
+router.get('/me', authMiddleware, asyncHandler(async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
   });
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
   res.json(user);
-});
+}));
 
 export default router;

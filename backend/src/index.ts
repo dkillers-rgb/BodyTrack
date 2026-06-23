@@ -33,8 +33,20 @@ app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/reports', reportRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err);
+  console.error('Express error handler caught:', err);
+  if (res.headersSent) {
+    return _next(err);
+  }
   res.status(500).json({ error: err.message || 'Erro interno do servidor' });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  process.exit(1);
 });
 
 app.listen(PORT, () => {

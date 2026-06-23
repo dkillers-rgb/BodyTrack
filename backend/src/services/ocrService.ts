@@ -1,7 +1,6 @@
 import Tesseract from 'tesseract.js';
 import sharp from 'sharp';
 import { PDFParse } from 'pdf-parse';
-import { pdf } from 'pdf-to-img';
 import { parseOcrText, OcrResult } from './ocrParser';
 
 export function isPdfBuffer(buffer: Buffer): boolean {
@@ -28,14 +27,9 @@ async function processPdfOcr(pdfBuffer: Buffer): Promise<OcrResult> {
       if (hasPartialMuscleFatData(parsed)) return parsed;
     }
   } catch {
-    /* fallback to page OCR */
+    /* fallback to text-only PDF parsing */
   } finally {
     await parser.destroy();
-  }
-
-  const document = await pdf(pdfBuffer, { scale: 2 });
-  for await (const page of document) {
-    return processImageOcr(page);
   }
 
   throw new Error('Não foi possível extrair dados do PDF');

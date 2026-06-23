@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../lib/auth';
 import { parseClientId } from '../lib/parseId';
+import { asyncHandler } from '../lib/asyncHandler';
 
 const router = Router();
 router.use(authMiddleware);
@@ -14,7 +15,7 @@ const clientSchema = z.object({
   height: z.number().positive(),
 });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const clients = await prisma.client.findMany({
     where: { userId: req.user!.userId },
     orderBy: { id: 'asc' },
@@ -27,9 +28,9 @@ router.get('/', async (req: Request, res: Response) => {
     },
   });
   res.json(clients);
-});
+}));
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseClientId(req.params.id);
   if (!id) return res.status(400).json({ error: 'ID inválido' });
 
@@ -41,9 +42,9 @@ router.get('/:id', async (req: Request, res: Response) => {
   });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
   res.json(client);
-});
+}));
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const parsed = clientSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -53,9 +54,9 @@ router.post('/', async (req: Request, res: Response) => {
     data: { ...parsed.data, userId: req.user!.userId },
   });
   res.status(201).json(client);
-});
+}));
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const parsed = clientSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -74,9 +75,9 @@ router.put('/:id', async (req: Request, res: Response) => {
     data: parsed.data,
   });
   res.json(client);
-});
+}));
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseClientId(req.params.id);
   if (!id) return res.status(400).json({ error: 'ID inválido' });
 
@@ -87,6 +88,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
   await prisma.client.delete({ where: { id } });
   res.status(204).send();
-});
+}));
 
 export default router;
