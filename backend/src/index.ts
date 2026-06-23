@@ -19,8 +19,8 @@ const allowedOrigins = [
   'http://localhost:5173',
 ];
 
-const corsOptions = {
-  origin: (origin: string | undefined, callback: cors.WithOriginCallback) => {
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('CORS not allowed'));
