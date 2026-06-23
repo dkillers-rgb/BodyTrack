@@ -59,10 +59,16 @@ Após selecionar o repositório, você verá a tela de configuração:
 Se o frontend precisa se conectar a um backend remoto, adicione:
 
 ```
-VITE_API_URL = https://seu-backend.com/api
+VITE_API_URL = https://bodytrack-ph0z.onrender.com
 ```
 
-Ou qualquer outra variável necessária para produção.
+Se você usa o backend localmente em desenvolvimento, defina:
+
+```
+VITE_API_URL = http://localhost:10000
+```
+
+Ou ajuste para o endereço do backend que estiver ativo.
 
 **Como adicionar:**
 1. Na tela de configuração, clique em **"Environment Variables"**

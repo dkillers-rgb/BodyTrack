@@ -1,4 +1,5 @@
-const API_URL = '/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
+const API_URL = rawApiUrl.replace(/\/+$/, '');
 
 function getToken(): string | null {
   return localStorage.getItem('bodytrack_token');
@@ -16,7 +17,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const response = await fetch(`${API_URL}${normalizedPath}`, { ...options, headers });
 
   if (response.status === 401) {
     localStorage.removeItem('bodytrack_token');
