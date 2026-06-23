@@ -1,5 +1,6 @@
 const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
-const API_URL = rawApiUrl.replace(/\/+$/, '');
+const baseUrl = rawApiUrl.replace(/\/+$/, '');
+const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 function getToken(): string | null {
   return localStorage.getItem('bodytrack_token');
