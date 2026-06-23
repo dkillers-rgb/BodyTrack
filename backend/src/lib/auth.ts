@@ -16,29 +16,30 @@ declare global {
   }
 }
 
-let defaultUser: AuthPayload | null = null;
+const DEFAULT_USER_EMAIL = 'public@bodytrack.local';
+let cachedDefaultUser: AuthPayload | null = null;
 
 async function createOrGetDefaultUser(): Promise<AuthPayload> {
-  if (defaultUser) return defaultUser;
+  if (cachedDefaultUser) return cachedDefaultUser;
 
   const user = await prisma.user.upsert({
-    where: { email: 'public@bodytrack.local' },
+    where: { email: DEFAULT_USER_EMAIL },
     update: {},
     create: {
       name: 'Public User',
-      email: 'public@bodytrack.local',
+      email: DEFAULT_USER_EMAIL,
       password: 'public',
       role: 'USER',
     },
   });
 
-  defaultUser = {
+  cachedDefaultUser = {
     userId: user.id,
     email: user.email,
     role: user.role,
   };
 
-  return defaultUser;
+  return cachedDefaultUser;
 }
 
 export function signToken(payload: AuthPayload): string {
@@ -51,14 +52,20 @@ export function signToken(payload: AuthPayload): string {
 }
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+
+  if (!header?.startsWith('Bearer ')) {
+    try {
+      req.user = await createOrGetDefaultUser();
+      return next();
+    } catch (error) {
+      console.error('Erro ao criar usuário padrão:', error);
+      return res.status(500).json({ error: 'Erro interno de autenticação' });
+    }
+  }
+
   const secret = process.env.JWT_SECRET;
   if (!secret) return res.status(500).json({ error: 'Configuração inválida' });
-
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    req.user = await createOrGetDefaultUser();
-    return next();
-  }
 
   const token = header.slice(7);
   try {
@@ -66,7 +73,12 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     req.user = decoded;
     next();
   } catch {
-    req.user = await createOrGetDefaultUser();
-    next();
+    try {
+      req.user = await createOrGetDefaultUser();
+      next();
+    } catch (error) {
+      console.error('Erro ao criar usuário padrão:', error);
+      return res.status(500).json({ error: 'Erro interno de autenticação' });
+    }
   }
 }

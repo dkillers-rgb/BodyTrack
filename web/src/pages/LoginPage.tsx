@@ -24,7 +24,7 @@ export default function LoginPage() {
         ? await api.auth.register(name, email, password)
         : await api.auth.login(email, password);
 
-      login(result.user, result.token);
+      login(result.user);
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao autenticar');

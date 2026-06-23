@@ -17,12 +17,7 @@ try {
   // ignore
 }
 
-function getToken(): string | null {
-  return localStorage.getItem('bodytrack_token');
-}
-
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
@@ -31,14 +26,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers['Content-Type'] = 'application/json';
   }
 
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const response = await fetch(`${API_URL}${normalizedPath}`, { ...options, headers });
 
   if (response.status === 401) {
-    localStorage.removeItem('bodytrack_token');
-    localStorage.removeItem('bodytrack_user');
     throw new Error('Sessão expirada');
   }
 

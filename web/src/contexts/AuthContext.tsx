@@ -4,34 +4,22 @@ import { User } from '../services/api';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (user: User, token: string) => void;
+  login: (user: User) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('bodytrack_user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
 
-  const login = (user: User, token: string) => {
-    localStorage.setItem('bodytrack_token', token);
-    localStorage.setItem('bodytrack_user', JSON.stringify(user));
+  const login = (user: User) => {
     setUser(user);
   };
 
   const logout = () => {
-    localStorage.removeItem('bodytrack_token');
-    localStorage.removeItem('bodytrack_user');
     setUser(null);
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem('bodytrack_token');
-    if (!token) setUser(null);
-  }, []);
 
   return (
     <AuthContext.Provider
