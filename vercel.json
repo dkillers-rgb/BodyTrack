@@ -10,5 +10,5 @@
   "routes": [
     { "src": "\\/(.*)", "dest": "\/$1" }
   ],
-  "outputDirectory": "web/dist"
+  "outputDirectory": "dist"
 }
