@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import { prisma } from './prisma';
 
 export interface AuthPayload {
   userId: string;
@@ -15,6 +16,31 @@ declare global {
   }
 }
 
+let defaultUser: AuthPayload | null = null;
+
+async function createOrGetDefaultUser(): Promise<AuthPayload> {
+  if (defaultUser) return defaultUser;
+
+  const user = await prisma.user.upsert({
+    where: { email: 'public@bodytrack.local' },
+    update: {},
+    create: {
+      name: 'Public User',
+      email: 'public@bodytrack.local',
+      password: 'public',
+      role: 'USER',
+    },
+  });
+
+  defaultUser = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  };
+
+  return defaultUser;
+}
+
 export function signToken(payload: AuthPayload): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET não configurado');
@@ -24,21 +50,23 @@ export function signToken(payload: AuthPayload): string {
   });
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token não fornecido' });
-  }
-
-  const token = header.slice(7);
+export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const secret = process.env.JWT_SECRET;
   if (!secret) return res.status(500).json({ error: 'Configuração inválida' });
 
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    req.user = await createOrGetDefaultUser();
+    return next();
+  }
+
+  const token = header.slice(7);
   try {
     const decoded = jwt.verify(token, secret) as AuthPayload;
     req.user = decoded;
     next();
   } catch {
-    return res.status(401).json({ error: 'Token inválido ou expirado' });
+    req.user = await createOrGetDefaultUser();
+    next();
   }
 }
