@@ -10,7 +10,32 @@ import reportRoutes from './routes/reports';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Configure CORS to allow the frontend origins (Vercel, localhost, etc.)
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'https://bodytrack-ph0z.onrender.com',
+  'https://body-track-web.vercel.app',
+  'https://bodytrack-web.vercel.app',
+  'http://localhost:10000',
+  'http://localhost:5173',
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // allow requests with no origin (like curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error('CORS not allowed'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
+
+// Ensure preflight OPTIONS requests are handled
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.resolve(process.env.UPLOAD_DIR || './uploads')));
 
