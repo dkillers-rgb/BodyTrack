@@ -27,12 +27,35 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'BodyTrack API' });
 });
 
+// Middleware para detectar erros de Prisma relacionados a DATABASE_URL
+app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err?.message?.includes('Error validating datasource')) {
+    console.error('Aviso: DATABASE_URL não configurado ou inválido');
+    return res.status(503).json({
+      error: 'Serviço temporariamente indisponível',
+      message: 'DATABASE_URL não está configurado corretamente',
+    });
+  }
+  next(err);
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/reports', reportRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const errorMsg = err?.message || '';
+  
+  // Check if it's a Prisma initialization error or validation error
+  if (errorMsg.includes('Error validating datasource') || errorMsg.includes('DATABASE_URL')) {
+    console.error('❌ DATABASE_URL não configurado:', errorMsg.substring(0, 100));
+    return res.status(503).json({
+      error: 'Serviço temporariamente indisponível',
+      message: 'DATABASE_URL não está configurado corretamente no ambiente',
+    });
+  }
+  
   console.error('Express error handler caught:', err);
   if (res.headersSent) {
     return _next(err);
@@ -51,4 +74,7 @@ process.on('uncaughtException', (error) => {
 
 app.listen(PORT, () => {
   console.log(`BodyTrack API rodando em http://localhost:${PORT}`);
+  if (!process.env.DATABASE_URL) {
+    console.warn('⚠️  AVISO: DATABASE_URL não está definido');
+  }
 });

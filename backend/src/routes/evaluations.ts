@@ -122,42 +122,49 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: formatValidationError(parsed.error) });
   }
 
-  const { clientId, examDate, weight, skeletalMuscle, bodyFat } = parsed.data;
-  const imagePath = req.body.imagePath as string | undefined;
-  const rawOcrText = req.body.rawOcrText as string | undefined;
+  try {
+    const { clientId, examDate, weight, skeletalMuscle, bodyFat } = parsed.data;
+    const imagePath = req.body.imagePath as string | undefined;
+    const rawOcrText = req.body.rawOcrText as string | undefined;
 
-  const client = await prisma.client.findFirst({
-    where: { id: clientId, userId: req.user!.userId },
-  });
-  if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
+    const client = await prisma.client.findFirst({
+      where: { id: clientId, userId: req.user!.userId },
+    });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
 
-  const evaluation = await prisma.evaluation.create({
-    data: {
-      clientId,
-      examDate: examDate ? new Date(examDate) : new Date(),
-      weight,
-      skeletalMuscle,
-      bodyFat,
-      imagePath,
-      rawOcrText,
-    },
-  });
+    const evaluation = await prisma.evaluation.create({
+      data: {
+        clientId,
+        examDate: examDate ? new Date(examDate) : new Date(),
+        weight,
+        skeletalMuscle,
+        bodyFat,
+        imagePath,
+        rawOcrText,
+      },
+    });
 
-  const allEvaluations = await prisma.evaluation.findMany({
-    where: { clientId },
-    orderBy: { examDate: 'asc' },
-  });
+    const allEvaluations = await prisma.evaluation.findMany({
+      where: { clientId },
+      orderBy: { examDate: 'asc' },
+    });
 
-  let aiAnalysis = generateLocalAnalysis(allEvaluations);
-  const openAiAnalysis = await generateEvolutionAnalysis(client.name, allEvaluations);
-  if (openAiAnalysis) aiAnalysis = openAiAnalysis;
+    let aiAnalysis = generateLocalAnalysis(allEvaluations);
+    const openAiAnalysis = await generateEvolutionAnalysis(client.name, allEvaluations);
+    if (openAiAnalysis) aiAnalysis = openAiAnalysis;
 
-  const updated = await prisma.evaluation.update({
-    where: { id: evaluation.id },
-    data: { aiAnalysis },
-  });
+    const updated = await prisma.evaluation.update({
+      where: { id: evaluation.id },
+      data: { aiAnalysis },
+    });
 
-  res.status(201).json(updated);
+    res.status(201).json(updated);
+  } catch (error: any) {
+    if (error?.message?.includes('Error validating datasource')) {
+      return res.status(503).json({ error: 'Banco de dados não configurado' });
+    }
+    throw error;
+  }
 }));
 
 router.post('/auto-save', upload.single('image'), asyncHandler(async (req: Request, res: Response) => {

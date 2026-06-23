@@ -57,18 +57,25 @@ router.get('/client/:clientId', asyncHandler(async (req: Request, res: Response)
 }));
 
 router.get('/overview', asyncHandler(async (req: Request, res: Response) => {
-  const [totalClients, totalEvaluations, recentEvaluations] = await Promise.all([
-    prisma.client.count({ where: { userId: req.user!.userId } }),
-    prisma.evaluation.count({ where: { client: { userId: req.user!.userId } } }),
-    prisma.evaluation.findMany({
-      where: { client: { userId: req.user!.userId } },
-      include: { client: { select: { id: true, name: true } } },
-      orderBy: { examDate: 'desc' },
-      take: 10,
-    }),
-  ]);
+  try {
+    const [totalClients, totalEvaluations, recentEvaluations] = await Promise.all([
+      prisma.client.count({ where: { userId: req.user!.userId } }),
+      prisma.evaluation.count({ where: { client: { userId: req.user!.userId } } }),
+      prisma.evaluation.findMany({
+        where: { client: { userId: req.user!.userId } },
+        include: { client: { select: { id: true, name: true } } },
+        orderBy: { examDate: 'desc' },
+        take: 10,
+      }),
+    ]);
 
-  res.json({ totalClients, totalEvaluations, recentEvaluations });
+    res.json({ totalClients, totalEvaluations, recentEvaluations });
+  } catch (error: any) {
+    if (error?.message?.includes('Error validating datasource')) {
+      return res.status(503).json({ error: 'Banco de dados não configurado' });
+    }
+    throw error;
+  }
 }));
 
 export default router;

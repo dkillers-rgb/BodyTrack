@@ -16,18 +16,25 @@ const clientSchema = z.object({
 });
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const clients = await prisma.client.findMany({
-    where: { userId: req.user!.userId },
-    orderBy: { id: 'asc' },
-    include: {
-      _count: { select: { evaluations: true } },
-      evaluations: {
-        orderBy: { examDate: 'desc' },
-        take: 1,
+  try {
+    const clients = await prisma.client.findMany({
+      where: { userId: req.user!.userId },
+      orderBy: { id: 'asc' },
+      include: {
+        _count: { select: { evaluations: true } },
+        evaluations: {
+          orderBy: { examDate: 'desc' },
+          take: 1,
+        },
       },
-    },
-  });
-  res.json(clients);
+    });
+    res.json(clients);
+  } catch (error: any) {
+    if (error?.message?.includes('Error validating datasource')) {
+      return res.status(503).json({ error: 'Banco de dados não configurado' });
+    }
+    throw error;
+  }
 }));
 
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
@@ -50,10 +57,17 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
 
-  const client = await prisma.client.create({
-    data: { ...parsed.data, userId: req.user!.userId },
-  });
-  res.status(201).json(client);
+  try {
+    const client = await prisma.client.create({
+      data: { ...parsed.data, userId: req.user!.userId },
+    });
+    res.status(201).json(client);
+  } catch (error: any) {
+    if (error?.message?.includes('Error validating datasource')) {
+      return res.status(503).json({ error: 'Banco de dados não configurado' });
+    }
+    throw error;
+  }
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
