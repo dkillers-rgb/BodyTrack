@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import path from 'path';
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -9,19 +10,16 @@ import reportRoutes from './routes/reports';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Allow all origins for CORS so the Vercel frontend can reach the Render backend
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
+const corsOptions: cors.CorsOptions = {
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
 
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-
-  next();
-});
-
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.resolve(process.env.UPLOAD_DIR || './uploads')));
 
