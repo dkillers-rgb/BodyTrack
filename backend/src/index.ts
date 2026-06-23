@@ -9,24 +9,11 @@ import reportRoutes from './routes/reports';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configure CORS to allow the frontend origins (Vercel, localhost, etc.)
-const allowedOrigins = new Set([
-  process.env.FRONTEND_URL || 'https://bodytrack-ph0z.onrender.com',
-  'https://body-track-web.vercel.app',
-  'https://bodytrack-web.vercel.app',
-  'http://localhost:10000',
-  'http://localhost:5173',
-]);
-
+// Allow all origins for CORS so the Vercel frontend can reach the Render backend
 app.use((req, res, next) => {
-  const origin = req.headers.origin as string | undefined;
-  if (origin && allowedOrigins.has(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Vary', 'Origin');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
