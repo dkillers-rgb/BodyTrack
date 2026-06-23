@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (including dev deps for build)
+RUN npm install --no-audit --no-fund
 
 # Copy source code
 COPY . .
@@ -34,7 +34,7 @@ RUN apk add --no-cache \
 COPY package*.json ./
 
 # Install production dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev --no-audit --no-fund
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
