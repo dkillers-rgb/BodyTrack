@@ -12,7 +12,8 @@ RUN npm install --no-audit --no-fund
 # Copy source code
 COPY . .
 
-# Build TypeScript
+# Generate Prisma client and build TypeScript
+RUN npm run db:generate
 RUN npm run build
 
 # Runtime stage
@@ -38,6 +39,10 @@ RUN npm install --omit=dev --no-audit --no-fund
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy generated Prisma client from builder
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Create uploads directory
 RUN mkdir -p uploads
