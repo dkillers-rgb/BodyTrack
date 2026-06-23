@@ -1,0 +1,34 @@
+.inbody-chart {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 20px 16px 12px;
+  color: #111111;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.inbody-chart__title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #111111;
+  margin: 0 0 16px;
+  text-transform: none;
+}
+
+.inbody-chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.inbody-chart__empty {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 32px 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}

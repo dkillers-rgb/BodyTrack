@@ -1,0 +1,16 @@
+.clients-search {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.clients-search input {
+  flex: 1;
+  max-width: 480px;
+}
+
+.clients-search-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}

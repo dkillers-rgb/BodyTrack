@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  clients Client[]
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String
+  gender    Gender
+  age       Int
+  height    Float
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  userId    String   @map("user_id")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluations  Evaluation[]
+
+  @@map("clients")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Evaluation {
+  id             String   @id @default(uuid())
+  clientId       Int      @map("client_id")
+  examDate       DateTime @map("exam_date")
+  weight         Float
+  skeletalMuscle Float    @map("skeletal_muscle")
+  bodyFat        Float    @map("body_fat")
+  imagePath      String?  @map("image_path")
+  rawOcrText     String?  @map("raw_ocr_text") @db.Text
+  aiAnalysis     String?  @map("ai_analysis") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, examDate])
+  @@map("evaluations")
+}
