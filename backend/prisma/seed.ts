@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const TEST_USER = {
   name: 'Usuário Teste',
   email: 'teste@bodytrack.com',
-  password: ':123456',
+  password: 'Teste123!',
 };
 
 async function main() {
