@@ -22,7 +22,11 @@
         "backgroundColor": "#0f1419"
       },
       "package": "com.bodytrack.app",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -32,6 +36,15 @@
           "cameraPermission": "Permitir acesso à câmera para leitura de QR Code"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "25353c1b-3f31-4ba0-91c0-68e3435da77c"
+      }
+    },
+    "owner": "dkillers"
   }
 }
