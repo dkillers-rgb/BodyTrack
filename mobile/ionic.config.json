@@ -1,0 +1,8 @@
+{
+  "name": "BodyTrack",
+  "type": "react",
+  "integrations": {
+    "capacitor": {}
+  },
+  "proxies": []
+}
