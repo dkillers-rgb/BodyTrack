@@ -12,6 +12,10 @@
     "android": "expo run:android",
     "build": "echo \"skip web build\"",
     "appflow:build": "echo \"skip web build\"",
+    "eas:login": "npx eas login",
+    "eas:configure": "npx eas build:configure",
+    "eas:build:android": "npx eas build --platform android --local",
+    "eas:build:android:cloud": "npx eas build --platform android",
     "ios": "expo run:ios",
     "web": "expo start --web"
   },
