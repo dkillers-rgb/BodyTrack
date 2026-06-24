@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "BodyTrack",
+    "slug": "bodytrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./mobile/assets/icon.png",
+    "scheme": "bodytrack",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0f1419"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bodytrack.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "O BodyTrack precisa da câmera para ler QR Codes dos relatórios de análise corporal."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f1419"
+      },
+      "package": "com.bodytrack.app",
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir acesso à câmera para leitura de QR Code"
+        }
+      ]
+    ]
+  }
+}
