@@ -3,7 +3,8 @@
     {
       "appId": "9c91e53b",
       "root": "mobile",
-      "dependencyInstallCommand": "npm install"
+      "androidPath": "android",
+      "dependencyInstallCommand": "export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 && export PATH=$JAVA_HOME/bin:$PATH && npm install"
     }
   ]
 }
