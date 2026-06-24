@@ -1,6 +1,7 @@
 {
   "name": "bodytrack-mobile",
   "version": "1.0.0",
+  "author": "UiryMonteiro",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",

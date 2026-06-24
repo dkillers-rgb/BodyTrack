@@ -2,6 +2,7 @@
   "name": "bodytrack",
   "version": "1.0.0",
   "private": true,
+  "author": "UiryMonteiro",
   "description": "Aplicativo para leitura de QR Code de equipamentos de análise corporal",
   "main": "electron/main.js",
   "workspaces": [
