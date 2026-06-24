@@ -1,4 +1,5 @@
 {
+  "javaVersion": "17",
   "apps": [
     {
       "appId": "9c91e53b",
