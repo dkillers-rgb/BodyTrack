@@ -1,7 +1,7 @@
 {
   "apps": [
     {
-      "appId": "REPLACE_WITH_APPFLOW_APP_ID",
+      "appId": "9c91e53b",
       "root": "mobile",
       "dependencyInstallCommand": "npm install"
     }
