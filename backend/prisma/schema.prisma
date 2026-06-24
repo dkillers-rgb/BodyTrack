@@ -56,8 +56,8 @@ model Evaluation {
   skeletalMuscle Float    @map("skeletal_muscle")
   bodyFat        Float    @map("body_fat")
   imagePath      String?  @map("image_path")
-  rawOcrText     String?  @map("raw_ocr_text") @db.Text
-  aiAnalysis     String?  @map("ai_analysis") @db.Text
+  rawOcrText     String?  @map("raw_ocr_text")
+  aiAnalysis     String?  @map("ai_analysis")
   createdAt      DateTime @default(now()) @map("created_at")
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)

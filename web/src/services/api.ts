@@ -4,16 +4,16 @@ const baseUrl = rawApiUrl.replace(/\/+$/, '');
 let API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 try {
-  if (rawApiUrl === '/api' && typeof window !== 'undefined') {
-    const host = window.location.hostname || '';
-    if (window.location.protocol === 'file:' || !host) {
-      API_URL = `http://localhost:${apiPort}/api`;
-    } else if (host.includes('vercel.app')) {
-      API_URL = 'https://bodytrack-ph0z.onrender.com/api';
-    } else if (host === 'localhost' || host.startsWith('127.0.0.1')) {
-      API_URL = `http://localhost:${apiPort}/api`;
+    if (rawApiUrl === '/api' && typeof window !== 'undefined') {
+      const host = window.location.hostname || '';
+      if (window.location.protocol === 'file:' || !host) {
+        API_URL = `http://127.0.0.1:${apiPort}/api`;
+      } else if (host.includes('vercel.app')) {
+        API_URL = 'https://bodytrack-ph0z.onrender.com/api';
+      } else if (host === 'localhost' || host.startsWith('127.0.0.1')) {
+        API_URL = `http://127.0.0.1:${apiPort}/api`;
+      }
     }
-  }
 } catch (e) {
   // ignore
 }

@@ -1,7 +1,75 @@
 import Tesseract from 'tesseract.js';
 import sharp from 'sharp';
-import { PDFParse } from 'pdf-parse';
 import { parseOcrText, OcrResult } from './ocrParser';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var DOMMatrix: any;
+}
+
+let pdfParseModule: any = null;
+
+async function loadPdfParse() {
+  if (!pdfParseModule) {
+    if (typeof global.DOMMatrix === 'undefined') {
+      global.DOMMatrix = class DOMMatrix {
+        constructor(..._args: any[]) {}
+        multiply() {
+          return this;
+        }
+        translateSelf() {
+          return this;
+        }
+        scaleSelf() {
+          return this;
+        }
+        rotateSelf() {
+          return this;
+        }
+        invertSelf() {
+          return this;
+        }
+        toString() {
+          return 'matrix(1 0 0 1 0 0)';
+        }
+      };
+    }
+
+    const tryRequire = (modulePath: string) => {
+      try {
+        return require(modulePath);
+      } catch {
+        return null;
+      }
+    };
+
+    const candidates = [
+      'pdf-parse/dist/node/cjs/index.cjs',
+      'pdf-parse/dist/pdf-parse/cjs/index.cjs',
+      'pdf-parse',
+    ];
+
+    for (const candidate of candidates) {
+      const mod = tryRequire(candidate);
+      if (mod) {
+        pdfParseModule = mod;
+        break;
+      }
+    }
+
+    if (!pdfParseModule) {
+      const err = new Error('Unable to load pdf-parse module from any known entry point');
+      console.warn('Failed to require pdf-parse:', err);
+      throw err;
+    }
+
+    if (pdfParseModule && typeof pdfParseModule === 'object' && typeof pdfParseModule.default === 'function') {
+      pdfParseModule = pdfParseModule.default;
+    }
+  }
+
+  return pdfParseModule;
+}
 
 export function isPdfBuffer(buffer: Buffer): boolean {
   return buffer.length >= 5 && buffer.subarray(0, 5).toString() === '%PDF-';
@@ -19,20 +87,70 @@ export async function processReportOcr(buffer: Buffer, mimeType?: string): Promi
 }
 
 async function processPdfOcr(pdfBuffer: Buffer): Promise<OcrResult> {
-  const parser = new PDFParse({ data: pdfBuffer });
+  // Try to use pdfParse for text extraction first
   try {
-    const { text } = await parser.getText();
-    if (text?.trim()) {
-      const parsed = parseOcrText(text);
-      if (hasPartialMuscleFatData(parsed)) return parsed;
+    const pdfParse = await loadPdfParse();
+    let text = '';
+
+    if (typeof pdfParse === 'function') {
+      const data = await (pdfParse as any)(pdfBuffer);
+      text = data?.text || '';
+    } else if (pdfParse && pdfParse.PDFParse) {
+      const Parser = pdfParse.PDFParse as any;
+      const parser = new Parser({ data: pdfBuffer });
+      const result = await parser.getText();
+      text = result?.text || '';
+      if (parser.destroy) await parser.destroy();
+    } else {
+      // fallback: try calling as function
+      try {
+        const data = await (pdfParse as any)(pdfBuffer);
+        text = data?.text || '';
+      } catch {
+        // ignore
+      }
     }
-  } catch {
-    /* fallback to text-only PDF parsing */
-  } finally {
-    await parser.destroy();
+
+    if (text.trim()) {
+      const parsed = parseOcrText(text);
+      if (hasPartialMuscleFatData(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (pdfError) {
+    const errMsg = (pdfError as any)?.stack || String(pdfError);
+    console.warn('PDF text parsing failed, will try image extraction:', errMsg);
+  }
+
+  // Convert PDF pages to images and run image OCR on each page
+  const pages = await convertPdfToImages(pdfBuffer);
+  for (const pageBuffer of pages) {
+    const result = await processWithTesseract(pageBuffer);
+    if (hasPartialMuscleFatData(result)) {
+      return result;
+    }
   }
 
   throw new Error('Não foi possível extrair dados do PDF');
+}
+
+async function convertPdfToImages(pdfBuffer: Buffer): Promise<Buffer[]> {
+  try {
+    const importModule = new Function('modulePath', 'return import(modulePath)');
+    const { pdf } = await importModule('pdf-to-img') as { pdf: (input: Buffer, options?: any) => any };
+    const doc = await pdf(pdfBuffer, { scale: 2 });
+    const pages: Buffer[] = [];
+    for await (const page of doc) {
+      pages.push(page as Buffer);
+    }
+    if (!pages.length) {
+      throw new Error('Nenhuma página de PDF foi convertida para imagem');
+    }
+    return pages;
+  } catch (error) {
+    console.error('PDF to image conversion failed:', error);
+    throw error;
+  }
 }
 
 export async function processImageOcr(imageBuffer: Buffer): Promise<OcrResult> {

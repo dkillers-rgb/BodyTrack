@@ -1,0 +1,6 @@
+{
+  "appId": "com.bodytrack.mobile",
+  "appName": "BodyTrack",
+  "webDir": "web/dist",
+  "bundledWebRuntime": false
+}

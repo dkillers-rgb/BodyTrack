@@ -33,6 +33,11 @@ export function signToken(payload: AuthPayload): string {
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
+    if (process.env.DISABLE_AUTH === 'true') {
+      req.user = DEFAULT_USER;
+      return next();
+    }
+
     // Ensure a matching user exists in the database. If not, create one with a stable id.
     const email = DEFAULT_USER.email;
     const user = await prisma.user.upsert({

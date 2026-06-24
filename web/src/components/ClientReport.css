@@ -61,6 +61,118 @@
   margin-bottom: 20px;
 }
 
+.client-report__reference-section {
+  margin-top: 10px;
+}
+
+.client-report__reference-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.client-report__reference-card {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  padding: 14px;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.client-report__reference-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.client-report__reference-card-header span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.client-report__reference-card-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.client-report__reference-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.client-report__reference-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.client-report__final-image-section {
+  margin-bottom: 20px;
+}
+
+.client-report__final-image {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.client-report__reference-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.client-report__reference-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.client-report__reference-list li:last-child {
+  border-bottom: none;
+}
+
+.client-report__reference-label,
+.client-report__reference-note {
+  color: #4b5563;
+  font-size: 11px;
+}
+
+.client-report__reference-value {
+  font-weight: 700;
+  color: #111111;
+}
+
+@media (max-width: 980px) {
+  .client-report__reference-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .client-report__section-title {
   font-size: 14px;
   font-weight: 700;
