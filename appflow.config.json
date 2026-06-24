@@ -1,15 +1,6 @@
 {
   "projectType": "expo",
   "sourceDirectory": "mobile",
-  "packageManager": "npm",
   "name": "BodyTrack",
-  "appId": "com.bodytrack.app",
-  "build": {
-    "android": {
-      "gradleProperties": {
-        "org.gradle.java.home": "/usr/lib/jvm/temurin-17-jdk-amd64",
-        "org.gradle.jvmargs": "-Xmx2048m -XX:MaxMetaspaceSize=512m"
-      }
-    }
-  }
+  "appId": "com.bodytrack.app"
 }
