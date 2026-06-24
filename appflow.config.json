@@ -1,6 +1,9 @@
 {
-  "projectType": "expo",
-  "sourceDirectory": "mobile",
-  "name": "BodyTrack",
-  "appId": "com.bodytrack.app"
+  "apps": [
+    {
+      "appId": "REPLACE_WITH_APPFLOW_APP_ID",
+      "root": "mobile",
+      "dependencyInstallCommand": "npm install"
+    }
+  ]
 }
