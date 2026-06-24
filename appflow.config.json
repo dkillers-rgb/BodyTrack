@@ -1,0 +1,6 @@
+{
+  "projectType": "expo",
+  "sourceDirectory": "mobile",
+  "name": "BodyTrack",
+  "appId": "com.bodytrack.app"
+}
