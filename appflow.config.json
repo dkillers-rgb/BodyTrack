@@ -1,12 +1,11 @@
 {
-  "javaVersion": "17",
   "apps": [
     {
       "appId": "9c91e53b",
       "root": "mobile",
       "androidPath": "android",
-      "javaVersion": "17",
-      "dependencyInstallCommand": "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 && export PATH=$JAVA_HOME/bin:$PATH && npm install"
+      "dependencyInstallCommand": "npm install",
+      "webBuildCommand": "npm run appflow:build"
     }
   ]
 }
