@@ -37,7 +37,7 @@ const ClientReport = forwardRef<HTMLDivElement, Props>(function ClientReport({ d
     latestBodyFatPercent != null ? getBodyFatCategory(latestBodyFatPercent) : '—';
   const targetWeight = summary.latestWeight != null ? summary.latestWeight - 1.5 : undefined;
   const basalMetabolism = summary.latestWeight != null ? Math.round(summary.latestWeight * 24) : undefined;
-  const healthyPoints = latestBodyFatPercent != null ? Math.max(50, Math.round(100 - latestBodyFatPercent)) : undefined;
+  
 
   return (
     <div ref={ref} className="client-report">
