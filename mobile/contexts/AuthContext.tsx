@@ -1,14 +1,14 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { api, User, setToken } from '../services/api';
+import { createContext, useContext, useState, ReactNode } from 'react';
+import { setToken, User } from '../services/api';
 
-const DEFAULT_TEST_USER = {
-  email: 'teste@bodytrack.com',
-  password: 'Teste123!',
+const DEFAULT_USER: User = {
+  id: 'local-user',
+  name: 'Usuário BodyTrack',
+  email: 'local@bodytrack.local',
 };
 
 interface AuthContextType {
-  user: User | null;
+  user: User;
   isLoading: boolean;
   login: (user: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -17,49 +17,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function restoreSession() {
-      const token = await SecureStore.getItemAsync('bodytrack_token');
-
-      if (token) {
-        setToken(token);
-        const stored = await SecureStore.getItemAsync('bodytrack_user');
-        if (stored) setUser(JSON.parse(stored));
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const result = await api.auth.login(DEFAULT_TEST_USER.email, DEFAULT_TEST_USER.password);
-        await SecureStore.setItemAsync('bodytrack_token', result.token);
-        await SecureStore.setItemAsync('bodytrack_user', JSON.stringify(result.user));
-        setToken(result.token);
-        setUser(result.user);
-      } catch (error) {
-        console.warn('Auto login failed', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    restoreSession();
-  }, []);
+  const [user, setUser] = useState<User>(DEFAULT_USER);
+  const [isLoading] = useState(false);
 
   const login = async (user: User, token: string) => {
-    await SecureStore.setItemAsync('bodytrack_token', token);
-    await SecureStore.setItemAsync('bodytrack_user', JSON.stringify(user));
     setToken(token);
     setUser(user);
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync('bodytrack_token');
-    await SecureStore.deleteItemAsync('bodytrack_user');
     setToken(null);
-    setUser(null);
+    setUser(DEFAULT_USER);
   };
 
   return (

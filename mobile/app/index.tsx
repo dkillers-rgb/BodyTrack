@@ -6,7 +6,7 @@ import { api, Overview } from '../services/api';
 import { useState } from 'react';
 
 export default function HomeScreen() {
-  const { user, isLoading, logout, login } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const [overview, setOverview] = useState<Overview | null>(null);
 
@@ -20,26 +20,6 @@ export default function HomeScreen() {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
-  }
-
-  if (!user) {
-    const handleRetry = async () => {
-      try {
-        const res = await api.auth.login('teste@bodytrack.com', 'Teste123!');
-        await login(res.user, res.token);
-      } catch (err) {
-        console.error('Retry login failed', err);
-      }
-    };
-
-    return (
-      <View style={styles.centered}>
-        <Text style={{ color: '#e8edf4', marginBottom: 12 }}>Usuário não autenticado</Text>
-        <TouchableOpacity style={styles.menuCard} onPress={handleRetry}>
-          <Text style={styles.menuTitle}>Tentar auto-login</Text>
-        </TouchableOpacity>
       </View>
     );
   }
