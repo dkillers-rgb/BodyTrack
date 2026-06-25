@@ -1,0 +1,34 @@
+
+> bodytrack-mobile@1.0.0 eas:build:android:cloud
+> npx eas build --platform android --non-interactive
+
+
+⚠️ Detected that your app uses Expo Go for development, this is not recommended when building production apps.
+Learn more: https://expo.fyi/why-not-build-expo-go-for-production
+To suppress this warning, set EAS_BUILD_NO_EXPO_GO_WARNING=true.
+
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+Resolved "production" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS.
+
+
+
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+√ Using remote Android credentials (Expo server)
+√ Using Keystore from configuration: Build Credentials RfUfVWhPBE (default)
+
+Compressing project files and uploading to EAS Build. Learn more: https://expo.fyi/eas-build-archive
+- Compressing project files
+- Uploading to EAS Build (0 / 22.5 MB)
+√ Uploaded to EAS 3s
+- Computing project fingerprint
+√ Computed project fingerprint
+
+See logs: https://expo.dev/accounts/dkillers/projects/bodytrack/builds/c44b7bec-5042-47ea-9b4a-e01fa1881553
+
+Waiting for build to complete. You can press Ctrl+C to exit.
+- Waiting for build to complete.
+× Build failed
+
+🤖 Android build failed:
+Unknown error. See logs of the Bundle JavaScript build phase for more information.
