@@ -1,4 +1,6 @@
 import TextRecognition from '@react-native-ml-kit/text-recognition';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { Image } from 'react-native';
 import { parseOcrText, OcrResult, OcrLine } from './ocrParser';
 import { downloadToCache, removeFile, resolveLocalUri } from './fileStorage';
 import type { OcrPreview } from './types';
@@ -55,11 +57,53 @@ function flattenMlKitLines(result: {
   return lines;
 }
 
+function getImageSize(uri: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    Image.getSize(uri, (width, height) => resolve({ width, height }), reject);
+  });
+}
+
+/** Recorte da seção 2 (Muscle Fat Analysis) para melhorar leitura dos valores no fim das barras. */
+async function ocrMuscleFatSection(uri: string): Promise<string | null> {
+  try {
+    const { width, height } = await getImageSize(uri);
+    if (!width || !height) return null;
+
+    const cropRegions = [
+      { originX: Math.floor(width * 0.02), originY: Math.floor(height * 0.33), width: Math.floor(width * 0.96), height: Math.floor(height * 0.18) },
+      { originX: Math.floor(width * 0.25), originY: Math.floor(height * 0.33), width: Math.floor(width * 0.55), height: Math.floor(height * 0.20) },
+      { originX: Math.floor(width * 0.28), originY: Math.floor(height * 0.33), width: Math.floor(width * 0.52), height: Math.floor(height * 0.20) },
+    ];
+
+    const parts: string[] = [];
+    for (const crop of cropRegions) {
+      const cropped = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ crop }],
+        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+      );
+      const result = await TextRecognition.recognize(cropped.uri);
+      if (result.text?.trim()) parts.push(result.text.trim());
+    }
+
+    return parts.length ? parts.join('\n') : null;
+  } catch {
+    return null;
+  }
+}
+
 async function recognizeWithSpatial(uri: string): Promise<OcrResult> {
   const result = await TextRecognition.recognize(uri);
   const rawText = result.text || '';
   const lines = flattenMlKitLines(result as Parameters<typeof flattenMlKitLines>[0]);
-  return parseOcrText(rawText, { lines });
+
+  let combinedText = rawText;
+  const sectionText = await ocrMuscleFatSection(uri);
+  if (sectionText) {
+    combinedText += `\n\n--- MFA SECTION OCR ---\n${sectionText}`;
+  }
+
+  return parseOcrText(combinedText, { lines });
 }
 
 export async function recognizeImageText(relativePath: string): Promise<string> {

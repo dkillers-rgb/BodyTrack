@@ -87,10 +87,18 @@ export default function ScanScreen() {
       openPreview(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao processar';
-      if (message.includes('Network') || message.includes('fetch') || message.includes('baixar')) {
+      if (
+        message.includes('Network') ||
+        message.includes('fetch') ||
+        message.includes('baixar') ||
+        message.includes('cleartext') ||
+        message.includes('HTTP do relatório')
+      ) {
         Alert.alert(
           'Sem conexão',
-          'Ler QR Code precisa de internet para baixar o relatório. Use "Enviar imagem ou PDF" se estiver offline.'
+          message.includes('cleartext') || message.includes('HTTP do relatório')
+            ? 'O app precisa de uma nova versão para baixar relatórios HTTP do equipamento. Gere e instale o build atualizado.'
+            : 'Ler QR Code precisa de internet para baixar o relatório. Use "Enviar imagem ou PDF" se estiver offline.'
         );
       } else {
         Alert.alert('Erro', message);

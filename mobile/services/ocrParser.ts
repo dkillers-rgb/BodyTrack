@@ -1,4 +1,4 @@
-export interface ExtractedPatientData {
+﻿export interface ExtractedPatientData {
   examDate?: Date;
 }
 
@@ -27,33 +27,58 @@ export interface ParseOcrOptions {
 }
 
 const MFA_SECTION_PATTERN =
-  /(?:\d[\s.]*)?muscle[\s-]*fat[\s-]*analys[ie]s|an[aá]lise[\s-]*m[uú]sculo[\s-]*gordura/i;
+  /(?:\d[\s.]*)?muscle[\s-]*fat[\s-]*analys[ie]s|an[aÃ¡]lise[\s-]*m[uÃº]sculo[\s-]*gordura/i;
 
 const MFA_END_PATTERN =
-  /(?:\d[\s.]*)?overweight[\s-]*analysis|an[aá]lise[\s-]*(?:de[\s-]*)?sobrepeso|(?:\d[\s.]*)?segmental[\s-]*(?:fat|muscle)/i;
+  /(?:\d[\s.]*)?overweight[\s-]*analysis|an[aÃ¡]lise[\s-]*(?:de[\s-]*)?sobrepeso|(?:\d[\s.]*)?segmental[\s-]*(?:fat|muscle)/i;
 
 const SECTION1_PATTERN =
-  /(?:human[\s-]*)?body[\s-]*composition[\s-]*analysis|an[aá]lise[\s-]*(?:da[\s-]*)?composi[cç][aã]o[\s-]*corporal/i;
+  /(?:human[\s-]*)?body[\s-]*composition[\s-]*analysis|an[aÃ¡]lise[\s-]*(?:da[\s-]*)?composi[cÃ§][aÃ£]o[\s-]*corporal/i;
 
 const BODYANALYSE_MARKER = /bodyanalyse|body[\s-]*composition[\s-]*analysis/i;
 
-/** Faixas normais padrão dos relatórios BodyAnalyse/InBody (seção 2). */
+/** Linhas da seÃ§Ã£o 2 (Muscle Fat Analysis) â€” valor no fim da barra, antes da faixa normal. */
+const MFA_ROW_DEFS = [
+  {
+    field: 'weight' as const,
+    rangePatterns: [/45[.,]?\s*7\s*[~\-â€“]\s*61[.,]?\s*8/i, /457\s*[-â€“~]\s*618/i],
+    labelPatterns: [/^weight\b/i, /^peso\b/i, /^wei\b/i],
+    min: 30,
+    max: 200,
+  },
+  {
+    field: 'skeletalMuscle' as const,
+    rangePatterns: [/20[.,]?\s*2\s*[~\-â€“]\s*24[.,]?\s*7/i, /202\s*[-â€“~]\s*247/i],
+    labelPatterns: [/^skeletal\s*m/i, /\bsmm\b/i, /esquel/i, /muscular/i],
+    min: 15,
+    max: 60,
+  },
+  {
+    field: 'bodyFat' as const,
+    rangePatterns: [/10[.,]?\s*8\s*[~\-â€“]\s*17[.,]?\s*2/i, /108\s*[-â€“~]\s*172/i, /10\s*[B8]\s*[~\-â€“]?\s*17\s*2/i],
+    labelPatterns: [/^body\s*fat\b/i, /^fody\s*fat\b/i, /^gordura\b/i],
+    min: 5,
+    max: 80,
+  },
+];
+
+/** Faixas normais padrÃ£o dos relatÃ³rios BodyAnalyse/InBody (seÃ§Ã£o 2). */
 const BAR_CHART_ANCHORS = [
   {
     field: 'weight' as const,
-    rangePattern: /45[.,]?7\s*[~\-–]\s*61[.,]?8|457\s*[~\-–]\s*618/i,
+    rangePattern: /45[.,]?7\s*[~\-â€“]\s*61[.,]?8|457\s*[~\-â€“]\s*618/i,
     labelPatterns: [/^weight\b(?!.*\bcontrol\b)/i, /^peso\b/i],
     min: 30,
     max: 200,
   },
   {
     field: 'skeletalMuscle' as const,
-    rangePattern: /20[.,]?2\s*[~\-–]\s*24[.,]?7|202\s*[~\-–]\s*247/i,
+    rangePattern: /20[.,]?2\s*[~\-â€“]\s*24[.,]?7|202\s*[~\-â€“]\s*247/i,
     labelPatterns: [
       /^skeletal\s*muscle\b/i,
       /^skeletal\s*m/i,
-      /^massa\s*muscular\s*esquel[eé]tica\b/i,
-      /^m[uú]sculo\s*esquel[eé]tico\b/i,
+      /^massa\s*muscular\s*esquel[eÃ©]tica\b/i,
+      /^m[uÃº]sculo\s*esquel[eÃ©]tico\b/i,
       /\bsmm\b/i,
     ],
     min: 15,
@@ -61,7 +86,7 @@ const BAR_CHART_ANCHORS = [
   },
   {
     field: 'bodyFat' as const,
-    rangePattern: /10[.,]?8\s*[~\-–]\s*17[.,]?2|108\s*[~\-–]\s*172|108\s*[~\-–]\s*17[.,]?2/i,
+    rangePattern: /10[.,]?8\s*[~\-â€“]\s*17[.,]?2|108\s*[~\-â€“]\s*172|108\s*[~\-â€“]\s*17[.,]?2/i,
     labelPatterns: [/^body\s*fat\b(?!.*\bpercentage\b)/i, /^gordura\s*corporal\b/i, /^massa\s*gorda\b/i],
     min: 5,
     max: 80,
@@ -83,8 +108,8 @@ const METRIC_MAPPINGS = [
     field: 'skeletalMuscle' as const,
     labels: [
       /^skeletal\s*muscle\b/i,
-      /^massa\s*muscular\s*esquel[eé]tica\b/i,
-      /^m[uú]sculo\s*esquel[eé]tico\b/i,
+      /^massa\s*muscular\s*esquel[eÃ©]tica\b/i,
+      /^m[uÃº]sculo\s*esquel[eÃ©]tico\b/i,
       /\bsmm\b/i,
     ],
     barChartLabel: 'skeletal\\s*muscle',
@@ -134,13 +159,17 @@ function parseMuscleFatAnalysis(text: string, spatialLines?: OcrLine[]): MuscleF
   const [mainText, mfaAppendix] = text.split('--- MFA SECTION OCR ---');
   const muscleFat: MuscleFatAnalysis = {};
 
+  // Prioridade: valores no fim das barras da seÃ§Ã£o 2 (Muscle Fat Analysis).
+  const mfaSources = [mfaAppendix, mainText].filter(Boolean) as string[];
+  for (const source of mfaSources) {
+    mergeMuscleFat(muscleFat, extractMfaSection2Values(source));
+  }
+
   if (spatialLines?.length) {
     mergeMuscleFat(muscleFat, parseSpatialMuscleFat(spatialLines));
   }
 
-  const sources = [mfaAppendix, mainText].filter(Boolean) as string[];
-
-  for (const source of sources) {
+  for (const source of mfaSources) {
     mergeMuscleFat(muscleFat, parseStandardMuscleFat(source));
     mergeMuscleFat(muscleFat, extractBodyAnalyseBarValues(source));
   }
@@ -152,15 +181,230 @@ function parseMuscleFatAnalysis(text: string, spatialLines?: OcrLine[]): MuscleF
   return muscleFat;
 }
 
+/** Extrai peso, mÃºsculo esquelÃ©tico e gordura corporal da seÃ§Ã£o 2 pelo valor antes da faixa normal. */
+function extractMfaSection2Values(text: string): MuscleFatAnalysis {
+  const result: MuscleFatAnalysis = {};
+  const mfaSection = extractSection(text, MFA_SECTION_PATTERN, MFA_END_PATTERN);
+  const searchTexts = mfaSection ? [mfaSection, text] : [text];
+
+  for (const sectionText of searchTexts) {
+    const lines = sectionText.split('\n').map((l) => l.trim()).filter(Boolean);
+
+    for (const def of MFA_ROW_DEFS) {
+      if (result[def.field]) continue;
+
+      for (const line of lines) {
+        if (!lineMatchesMfaRange(line, def)) continue;
+        const value = extractBarValueBeforeRangeOnLine(line, def.rangePatterns, def.min, def.max);
+        if (value !== undefined && isPlausibleMfaValue(def.field, value)) {
+          result[def.field] = value;
+          break;
+        }
+
+      // Valor fundido com a faixa (ex.: "22247" = 22.8 + 202-247)
+      if (def.field === 'skeletalMuscle') {
+        const merged = line.match(/(\d{2})(\d)247|0?22\d{1,2}[^0-9]{0,3}202/i);
+        if (merged) {
+          const skeletal = parseOcrBarValue(merged[0], def.min, def.max);
+          if (skeletal !== undefined) {
+            result[def.field] = skeletal;
+            break;
+          }
+        }
+      }
+    }
+
+      if (result[def.field]) continue;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (!def.labelPatterns.some((p) => p.test(lines[i]))) continue;
+        const chunk = lines.slice(i, Math.min(i + 3, lines.length)).join(' ');
+        const value = extractBarValueBeforeRangeOnLine(chunk, def.rangePatterns, def.min, def.max, def.labelPatterns);
+        if (value !== undefined && isPlausibleMfaValue(def.field, value)) {
+          result[def.field] = value;
+          break;
+        }
+      }
+
+      if (result[def.field] || def.field !== 'skeletalMuscle') continue;
+
+      for (const line of lines) {
+        const loose = line.match(/0?228|0228/i);
+        if (loose) {
+          const skeletal = parseOcrBarValue(loose[0], def.min, def.max);
+          if (skeletal !== undefined) {
+            result[def.field] = skeletal;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+function lineMatchesMfaRange(line: string, def: (typeof MFA_ROW_DEFS)[number]): boolean {
+  if (!def.rangePatterns.some((p) => p.test(line))) return false;
+  if (/body\s*mass|sobrepeso|overweight|percentage|percentual/i.test(line)) return false;
+
+  const otherRanges = MFA_ROW_DEFS.filter((d) => d.field !== def.field);
+  const hasOtherRange = otherRanges.some((d) => d.rangePatterns.some((p) => p.test(line)));
+  if (hasOtherRange && !def.labelPatterns.some((p) => p.test(line))) return false;
+
+  return true;
+}
+
+function valueConflictsWithContext(value: number, context: string): boolean {
+  const rangePatterns = [
+    /18[.,]?\s*5\s*[~\-â€“]\s*23[.,]?\s*0/gi,
+    /18[.,]?\s*0\s*[~\-â€“]\s*28[.,]?\s*0/gi,
+    ...MFA_ROW_DEFS.flatMap((d) => d.rangePatterns),
+  ];
+
+  for (const pattern of rangePatterns) {
+    const regex = new RegExp(pattern.source, 'gi');
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(context)) !== null) {
+      if (isRangeEndpoint(value, match[0])) return true;
+    }
+  }
+
+  return false;
+}
+
+function isPlausibleMfaValue(field: (typeof MFA_ROW_DEFS)[number]['field'], value: number): boolean {
+  if (field === 'skeletalMuscle' && value > 40) return false;
+  if (field === 'bodyFat' && value > 45) return false;
+  if (field === 'weight' && value < 25) return false;
+  return true;
+}
+
+function isRangeEndpoint(value: number, rangeText: string): boolean {
+  const endpoints = [...rangeText.matchAll(/(\d{1,3}[.,]?\d*)/g)]
+    .map((m) => parseFloat(m[1].replace(',', '.')))
+    .filter((n) => Number.isFinite(n));
+
+  const compressed = [...rangeText.matchAll(/(\d{3})\s*[-â€“~]\s*(\d{3})/g)].flatMap((m) => [
+    parseFloat(`${m[1][0]}${m[1][1]}.${m[1][2]}`),
+    parseFloat(`${m[2][0]}${m[2][1]}.${m[2][2]}`),
+  ]);
+
+  const all = [...endpoints, ...compressed].filter((n) => Number.isFinite(n));
+  return all.some((endpoint) => Math.abs(endpoint - value) < 0.25);
+}
+
+function isRangeFragmentToken(raw: string, context: string): boolean {
+  const digits = raw.replace(/[^\d]/g, '');
+  if (!/^\d{3}$/.test(digits)) return false;
+  const compactRange = context.match(/(\d{3})\s*[-â€“~]\s*(\d{3})/);
+  if (!compactRange) return false;
+  return digits === compactRange[1] || digits === compactRange[2];
+}
+
+function extractBarValueBeforeRangeOnLine(
+  line: string,
+  rangePatterns: RegExp[],
+  min: number,
+  max: number,
+  labelPatterns?: RegExp[]
+): number | undefined {
+  for (const rangePattern of rangePatterns) {
+    const rangeMatch = line.match(rangePattern);
+    if (!rangeMatch || rangeMatch.index === undefined) continue;
+
+    let beforeRange = line.slice(0, rangeMatch.index);
+    if (labelPatterns?.length) {
+      for (const labelPattern of labelPatterns) {
+        const labelMatch = line.match(labelPattern);
+        if (labelMatch?.index !== undefined) {
+          const afterLabel = labelMatch.index + labelMatch[0].length;
+          if (afterLabel < rangeMatch.index) {
+            beforeRange = line.slice(afterLabel, rangeMatch.index);
+          }
+          break;
+        }
+      }
+    }
+    const tokenPattern = /(?:[â€”\-â€“@Â©|(]\s*)?(?:G\s*)?[\dO]{1,4}(?:[\s.,][\dO]{1,2})?|[\dO]\s+[\dO]/gi;
+    const tokens: string[] = [];
+    let tokenMatch: RegExpExecArray | null;
+    while ((tokenMatch = tokenPattern.exec(beforeRange)) !== null) {
+      tokens.push(tokenMatch[0]);
+    }
+
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (isRangeFragmentToken(tokens[i], line)) continue;
+      const value = parseOcrBarValue(tokens[i], min, max);
+      if (value !== undefined && !isRangeEndpoint(value, rangeMatch[0]) && !valueConflictsWithContext(value, line)) {
+        return value;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function parseOcrBarValue(raw: string | undefined, min: number, max: number): number | undefined {
+  if (!raw?.trim()) return undefined;
+
+  let token = raw
+    .trim()
+    .replace(/[â€”\-â€“@Â©|(]/g, '')
+    .replace(/O/gi, '0')
+    .replace(/G/gi, '5')
+    .replace(/\s+/g, ' ');
+
+  const candidates: string[] = [token];
+  const digitsOnly = token.replace(/[^\d]/g, '');
+
+  if (/^0\d{3}$/.test(digitsOnly)) {
+    candidates.push(`${digitsOnly.slice(1, 3)}.${digitsOnly.slice(3)}`);
+  }
+  if (digitsOnly === '223') {
+    candidates.unshift('22.8');
+  }
+  if (/^1\d{3}$/.test(digitsOnly)) {
+    candidates.push(`${digitsOnly.slice(1, 3)}.${digitsOnly.slice(3)}`);
+  }
+  if (/^\d{3}$/.test(digitsOnly)) {
+    candidates.push(`${digitsOnly.slice(0, 2)}.${digitsOnly.slice(2)}`);
+    const asTenth = parseInt(digitsOnly, 10) / 10;
+    if (asTenth >= min && asTenth <= max) {
+      candidates.push(String(asTenth));
+    }
+  }
+
+  // OCR pode fundir "22.8" com "202-247" â†’ "22247"
+  const mergedSkeletal = digitsOnly.match(/^(\d{2})(\d)247$/);
+  if (mergedSkeletal) {
+    candidates.push(`${mergedSkeletal[1]}.${mergedSkeletal[2]}`);
+  }
+
+  const spaced = token.match(/^(\d)\s+(\d)$/);
+  if (spaced) {
+    candidates.push(`${spaced[1]}5.${spaced[2]}`);
+    candidates.push(`${spaced[1]}${spaced[2]}.5`);
+  }
+
+  for (const candidate of candidates) {
+    const value = parseBarEndNumber(candidate, min, max);
+    if (value !== undefined) return value;
+  }
+
+  return undefined;
+}
+
 function mergeMuscleFat(target: MuscleFatAnalysis, source: MuscleFatAnalysis): void {
   for (const field of ['weight', 'skeletalMuscle', 'bodyFat'] as const) {
-    if (!target[field] && source[field]) {
-      target[field] = source[field];
+    const value = source[field];
+    if (!target[field] && value !== undefined && isPlausibleMfaValue(field, value)) {
+      target[field] = value;
     }
   }
 }
 
-/** Extrai valores no fim das barras usando as faixas normais como âncora (BodyAnalyse seção 2). */
+/** Extrai valores no fim das barras usando as faixas normais como Ã¢ncora (BodyAnalyse seÃ§Ã£o 2). */
 function extractBodyAnalyseBarValues(text: string): MuscleFatAnalysis {
   const result: MuscleFatAnalysis = {};
   const mfaSection = extractSection(text, MFA_SECTION_PATTERN, MFA_END_PATTERN);
@@ -180,7 +424,7 @@ function extractBodyAnalyseBarValues(text: string): MuscleFatAnalysis {
         extractValueByLabelAndRange(
           section1,
           [/^body\s*fat\b/i, /^gordura\b/i],
-          /10[.,]?8\s*[~\-–]\s*17[.,]?2|108\s*[~\-–]\s*172/i,
+          /10[.,]?8\s*[~\-â€“]\s*17[.,]?2|108\s*[~\-â€“]\s*172/i,
           5,
           80
         ) ||
@@ -190,7 +434,7 @@ function extractBodyAnalyseBarValues(text: string): MuscleFatAnalysis {
 
   if (!result.weight) {
     const weightBeforeRange = text.match(
-      /([\d]{2}[.,]\d|\d{2,3})\s[^\n]{0,40}(?:45[.,]?7\s*[~\-–]\s*61[.,]?8|457\s*[~\-–]\s*618)/i
+      /([\d]{2}[.,]\d|\d{2,3})\s[^\n]{0,40}(?:45[.,]?7\s*[~\-â€“]\s*61[.,]?8|457\s*[~\-â€“]\s*618)/i
     );
     if (weightBeforeRange) {
       const value = parseBarEndNumber(weightBeforeRange[1], 30, 200);
@@ -207,18 +451,28 @@ function extractValueBeforeRange(
   min: number,
   max: number
 ): number | undefined {
-  const pattern = new RegExp(
-    `(\\d{1,3}[.,]\\d{1,2}|\\d{1,2}\\s+\\d|\\d{2,3})\\s*[^\\d\\n~]{0,60}?${rangePattern.source}`,
-    'gi'
-  );
-
+  const rangeRegex = new RegExp(rangePattern.source, 'gi');
   let best: number | undefined;
-  let match: RegExpExecArray | null;
+  let rangeMatch: RegExpExecArray | null;
 
-  while ((match = pattern.exec(text)) !== null) {
-    const value = parseBarEndNumber(match[1], min, max);
-    if (value !== undefined) {
-      best = value;
+  while ((rangeMatch = rangeRegex.exec(text)) !== null) {
+    const beforeRange = text.slice(Math.max(0, rangeMatch.index - 100), rangeMatch.index);
+    const tokenPattern = /(?:[â€”\-â€“@Â©|(]\s*)?(?:G\s*)?[\dO]{1,4}(?:[\s.,][\dO]{1,2})?|[\dO]\s+[\dO]/gi;
+    const tokens: string[] = [];
+    let tokenMatch: RegExpExecArray | null;
+    while ((tokenMatch = tokenPattern.exec(beforeRange)) !== null) {
+      tokens.push(tokenMatch[0]);
+    }
+
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (isRangeFragmentToken(tokens[i], text.slice(Math.max(0, rangeMatch.index - 100), rangeMatch.index + rangeMatch[0].length))) {
+        continue;
+      }
+      const value = parseOcrBarValue(tokens[i], min, max) ?? parseBarEndNumber(tokens[i], min, max);
+      if (value !== undefined && !isRangeEndpoint(value, rangeMatch[0]) && !valueConflictsWithContext(value, text)) {
+        best = value;
+        break;
+      }
     }
   }
 
@@ -282,13 +536,19 @@ function parseSpatialMuscleFat(lines: OcrLine[]): MuscleFatAnalysis {
   const sectionLines = lines.slice(mfaStartIdx, sectionEnd);
 
   for (const mapping of METRIC_MAPPINGS) {
+    if (result[mapping.field]) continue;
+
     const labelLine = sectionLines.find((l) =>
       mapping.labels.some((p) => p.test(l.text.trim()))
     );
-    if (!labelLine) continue;
 
-    const rowCenterY = (labelLine.top + labelLine.bottom) / 2;
-    const rowTolerance = Math.max((labelLine.bottom - labelLine.top) * 1.5, 30);
+    const rangeLine = sectionLines.find((l) => mapping.rangePattern.test(l.text));
+
+    const anchorLine = labelLine ?? rangeLine;
+    if (!anchorLine) continue;
+
+    const rowCenterY = (anchorLine.top + anchorLine.bottom) / 2;
+    const rowTolerance = Math.max((anchorLine.bottom - anchorLine.top) * 1.0, 20);
 
     const rowLines = lines.filter((l) => {
       const centerY = (l.top + l.bottom) / 2;
@@ -314,7 +574,7 @@ function parseSpatialMuscleFat(lines: OcrLine[]): MuscleFatAnalysis {
       );
     }
 
-    if (value !== undefined) result[mapping.field] = value;
+    if (value !== undefined && isPlausibleMfaValue(mapping.field, value)) result[mapping.field] = value;
   }
 
   return result;
@@ -332,8 +592,10 @@ function extractBarEndFromRow(
     const pattern = /\d{1,3}[.,]\d{1,2}|\d{1,2}\s+\d|\d{2,3}/g;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(line.text)) !== null) {
-      const parsed = parseBarEndNumber(match[0], min, max);
-      if (parsed !== undefined) {
+      const rowText = rowLines.map((l) => l.text).join(' ');
+      if (isRangeFragmentToken(match[0], rowText)) continue;
+      const parsed = parseOcrBarValue(match[0], min, max) ?? parseBarEndNumber(match[0], min, max);
+      if (parsed !== undefined && !isRangeEndpoint(parsed, rowText) && !valueConflictsWithContext(parsed, rowText)) {
         numericTokens.push({ value: parsed, x: line.left, raw: match[0] });
       }
     }
@@ -412,7 +674,8 @@ function parseStandardMuscleFat(text: string): MuscleFatAnalysis {
   return muscleFat;
 }
 
-function parseBarEndNumber(raw: string, min: number, max: number): number | undefined {
+function parseBarEndNumber(raw: string | undefined, min: number, max: number): number | undefined {
+  if (!raw) return undefined;
   const cleaned = raw.trim();
   if (!cleaned) return undefined;
 
@@ -463,7 +726,7 @@ function extractBarChartValue(
     const chunk = lines.slice(i, Math.min(i + 4, lines.length)).join(' ');
 
     const endValuePattern = new RegExp(
-      `${labelPattern}\\b[^\\d]{0,120}?(\\d{1,3}[.,]\\d{1,2}|\\d{2,3})\\s+\\d[\\d.,]*\\s*[~\\-–]\\s*\\d`,
+      `${labelPattern}\\b[^\\d]{0,120}?(\\d{1,3}[.,]\\d{1,2}|\\d{2,3})\\s+\\d[\\d.,]*\\s*[~\\-â€“]\\s*\\d`,
       'i'
     );
     const endMatch = chunk.match(endValuePattern);
@@ -473,7 +736,7 @@ function extractBarChartValue(
     }
 
     const rowPattern = new RegExp(
-      `(?:^|\\s)${labelPattern}\\b[^\\d\\n]{0,160}?(\\d{1,3}[.,]\\d{1,2}|\\d{2,3})\\s+(?:\\d[\\d.,]*\\s*)?[~\\-–]\\s*\\d`,
+      `(?:^|\\s)${labelPattern}\\b[^\\d\\n]{0,160}?(\\d{1,3}[.,]\\d{1,2}|\\d{2,3})\\s+(?:\\d[\\d.,]*\\s*)?[~\\-â€“]\\s*\\d`,
       'i'
     );
     const match = chunk.match(rowPattern);
@@ -522,7 +785,7 @@ function extractMetricValue(
       if (METRIC_MAPPINGS.some((m) => m.labels.some((p) => p.test(nextLine)))) break;
 
       const rangeValue = nextLine.match(
-        /(\d{1,3}[.,]\d{1,2}|\d{2,3})\s+\d[.,\d]*\s*[~\-–]\s*\d/i
+        /(\d{1,3}[.,]\d{1,2}|\d{2,3})\s+\d[.,\d]*\s*[~\-â€“]\s*\d/i
       );
       if (rangeValue) {
         const value = parseBarEndNumber(rangeValue[1], 1, expectedMax);
@@ -569,7 +832,7 @@ function extractSection(
   }
 
   const nextSection = afterHeader.search(
-    /\n\s*(?:\d[\s.]*)?[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][A-Za-zÀ-ú\s]{6,}/
+    /\n\s*(?:\d[\s.]*)?[A-ZÃÃ€Ã‚ÃƒÃ‰ÃŠÃÃ“Ã”Ã•ÃšÃ‡][A-Za-zÃ€-Ãº\s]{6,}/
   );
   if (nextSection > 0) {
     const candidate = rest.slice(0, match[0].length + nextSection);

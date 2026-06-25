@@ -33,7 +33,16 @@
         {
           "cameraPermission": "Permitir acesso à câmera para leitura de QR Code"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "./plugins/withAndroidCleartextTraffic.js"
     ],
     "extra": {
       "storageMode": "local",
