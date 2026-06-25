@@ -4,6 +4,11 @@ import { useRouter } from 'expo-router';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
+const TEST_USER = {
+  email: 'teste@bodytrack.com',
+  password: 'Teste123!',
+};
+
 export default function LoginScreen() {
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
@@ -19,6 +24,19 @@ export default function LoginScreen() {
       const result = isRegister
         ? await api.auth.register(name, email, password)
         : await api.auth.login(email, password);
+      await login(result.user, result.token);
+      router.replace('/');
+    } catch (err) {
+      Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao autenticar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await api.auth.login(TEST_USER.email, TEST_USER.password);
       await login(result.user, result.token);
       router.replace('/');
     } catch (err) {
@@ -67,6 +85,12 @@ export default function LoginScreen() {
         </Text>
       </TouchableOpacity>
 
+      {!isRegister && (
+        <TouchableOpacity style={styles.testBtn} onPress={handleTestLogin} disabled={loading}>
+          <Text style={styles.testBtnText}>Login de Teste</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity onPress={() => setIsRegister(!isRegister)}>
         <Text style={styles.toggle}>
           {isRegister ? 'Já tem conta? Fazer login' : 'Não tem conta? Criar conta'}
@@ -99,5 +123,19 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  testBtn: {
+    backgroundColor: '#111827',
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+  },
+  testBtnText: {
+    color: '#3b82f6',
+    fontWeight: '600',
+    fontSize: 16,
+  },
   toggle: { color: '#3b82f6', textAlign: 'center', marginTop: 20, fontSize: 14 },
 });
