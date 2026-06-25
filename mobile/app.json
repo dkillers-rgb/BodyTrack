@@ -21,12 +21,12 @@
       "package": "com.bodytrack.app",
       "permissions": [
         "CAMERA",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "plugins": [
       "expo-router",
+      "expo-sqlite",
       [
         "expo-camera",
         {
@@ -35,7 +35,7 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://10.0.2.2:3001/api",
+      "storageMode": "local",
       "router": {
         "origin": false
       },

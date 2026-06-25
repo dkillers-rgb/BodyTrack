@@ -73,7 +73,18 @@ export default function ClientsScreen() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      Alert.alert('Erro', 'Informe o nome do cliente.');
+      return;
+    }
+    if (!form.age || form.age < 1) {
+      Alert.alert('Erro', 'Informe uma idade válida (mínimo 1 ano).');
+      return;
+    }
+    if (!form.height || form.height <= 0) {
+      Alert.alert('Erro', 'Informe a altura em centímetros.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -84,6 +95,10 @@ export default function ClientsScreen() {
       }
       closeModal();
       loadClients();
+      Alert.alert(
+        'Sucesso',
+        editingClient ? 'Cliente atualizado com sucesso.' : 'Cliente cadastrado com sucesso.'
+      );
     } catch (err) {
       Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao salvar');
     } finally {

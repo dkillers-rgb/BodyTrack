@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { initDatabase } from '../db/database';
 import { setToken, User } from '../services/api';
 
 const DEFAULT_USER: User = {
@@ -18,17 +20,31 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(DEFAULT_USER);
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (user: User, token: string) => {
+  useEffect(() => {
+    initDatabase()
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const login = async (nextUser: User, token: string) => {
     setToken(token);
-    setUser(user);
+    setUser(nextUser);
   };
 
   const logout = async () => {
     setToken(null);
     setUser(DEFAULT_USER);
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout }}>
@@ -42,3 +58,12 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth deve ser usado dentro de AuthProvider');
   return ctx;
 }
+
+const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0f1419',
+  },
+});

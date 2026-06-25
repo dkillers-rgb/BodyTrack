@@ -34,6 +34,7 @@ export default function HomeScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.greeting}>Olá, {user.name}</Text>
+      <Text style={styles.offlineBadge}>Dados salvos localmente neste dispositivo</Text>
 
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
@@ -67,7 +68,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  greeting: { fontSize: 24, fontWeight: '700', color: '#e8edf4', marginBottom: 24 },
+  greeting: { fontSize: 24, fontWeight: '700', color: '#e8edf4', marginBottom: 8 },
+  offlineBadge: {
+    fontSize: 13,
+    color: '#22c55e',
+    marginBottom: 24,
+    fontWeight: '500',
+  },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   statCard: {
     flex: 1,

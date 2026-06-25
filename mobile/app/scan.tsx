@@ -86,7 +86,15 @@ export default function ScanScreen() {
       const result = await api.evaluations.scanQr(data);
       openPreview(result);
     } catch (err) {
-      Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao processar');
+      const message = err instanceof Error ? err.message : 'Erro ao processar';
+      if (message.includes('Network') || message.includes('fetch') || message.includes('baixar')) {
+        Alert.alert(
+          'Sem conexão',
+          'Ler QR Code precisa de internet para baixar o relatório. Use "Enviar imagem ou PDF" se estiver offline.'
+        );
+      } else {
+        Alert.alert('Erro', message);
+      }
       setScanned(false);
     } finally {
       setProcessing(false);
@@ -108,14 +116,22 @@ export default function ScanScreen() {
 
     setProcessing(true);
     try {
-      const form = new FormData();
-      form.append('image', {
-        uri: asset.uri,
-        type: isPdf ? 'application/pdf' : (asset.mimeType || 'image/jpeg'),
-        name: asset.name || (isPdf ? 'report.pdf' : 'report.jpg'),
-      } as unknown as Blob);
-
-      const ocrResult = await api.evaluations.processImage(form);
+      const ocrResult = await api.evaluations.processImage(
+        asset.uri,
+        isPdf ? 'application/pdf' : asset.mimeType || 'image/jpeg',
+        asset.name
+      );
+      if (
+        isPdf &&
+        !ocrResult.preview.muscleFat.weight &&
+        !ocrResult.preview.muscleFat.skeletalMuscle &&
+        !ocrResult.preview.muscleFat.bodyFat
+      ) {
+        Alert.alert(
+          'PDF salvo',
+          'O arquivo foi salvo no dispositivo. Preencha os dados manualmente — a leitura automática funciona offline apenas com imagens (JPG/PNG).'
+        );
+      }
       openPreview(ocrResult);
     } catch (err) {
       Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao processar arquivo');
@@ -144,7 +160,7 @@ export default function ScanScreen() {
         weight,
         skeletalMuscle,
         bodyFat,
-        imagePath: preview.imagePath,
+        imagePath: preview.imagePath || undefined,
         rawOcrText: preview.ocr.rawText,
       });
 
