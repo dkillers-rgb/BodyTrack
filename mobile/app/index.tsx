@@ -26,6 +26,7 @@ export default function HomeScreen() {
 
   const menuItems = [
     { title: 'Ler QR Code', icon: '📷', route: '/scan' },
+    { title: 'Relatórios', icon: '📈', route: '/reports' },
     { title: 'Histórico', icon: '📋', route: '/history' },
     { title: 'Clientes', icon: '👥', route: '/clients' },
   ];

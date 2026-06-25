@@ -31,6 +31,7 @@ export default function ClientsScreen() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<ClientInput>(emptyForm);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -56,20 +57,32 @@ export default function ClientsScreen() {
       age: client.age,
       height: client.height,
     });
+    setIsCreating(false);
   };
 
-  const closeEdit = () => {
+  const openCreate = () => {
     setEditingClient(null);
     setForm(emptyForm);
+    setIsCreating(true);
+  };
+
+  const closeModal = () => {
+    setEditingClient(null);
+    setForm(emptyForm);
+    setIsCreating(false);
   };
 
   const handleSave = async () => {
-    if (!editingClient || !form.name.trim()) return;
+    if (!form.name.trim()) return;
 
     setSaving(true);
     try {
-      await api.clients.update(editingClient.id, form);
-      closeEdit();
+      if (editingClient) {
+        await api.clients.update(editingClient.id, form);
+      } else {
+        await api.clients.create(form);
+      }
+      closeModal();
       loadClients();
     } catch (err) {
       Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao salvar');
@@ -80,6 +93,9 @@ export default function ClientsScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.newClientBtn} onPress={openCreate}>
+        <Text style={styles.newClientBtnText}>+ Cadastrar cliente</Text>
+      </TouchableOpacity>
       <TextInput
         style={styles.search}
         placeholder="Buscar por nome, ID, idade..."
@@ -116,7 +132,7 @@ export default function ClientsScreen() {
         }
       />
 
-      <Modal visible={!!editingClient} animationType="slide" transparent>
+      <Modal visible={isCreating || !!editingClient} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <ScrollView>
@@ -165,9 +181,9 @@ export default function ClientsScreen() {
                 onPress={handleSave}
                 disabled={saving}
               >
-                <Text style={styles.saveBtnText}>{saving ? 'Salvando...' : 'Salvar alterações'}</Text>
+                <Text style={styles.saveBtnText}>{saving ? 'Salvando...' : editingClient ? 'Salvar alterações' : 'Cadastrar cliente'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelBtn} onPress={closeEdit}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={closeModal}>
                 <Text style={styles.cancelBtnText}>Cancelar</Text>
               </TouchableOpacity>
             </ScrollView>
