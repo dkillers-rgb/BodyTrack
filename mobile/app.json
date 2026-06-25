@@ -7,9 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "bodytrack",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "backgroundColor": "#0f1419"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bodytrack.app",
