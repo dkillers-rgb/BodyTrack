@@ -15,7 +15,6 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ title: 'BodyTrack' }} />
-        <Stack.Screen name="login" options={{ title: 'Entrar', headerShown: false }} />
         <Stack.Screen name="scan" options={{ title: 'Ler QR Code' }} />
         <Stack.Screen name="clients" options={{ title: 'Clientes' }} />
         <Stack.Screen name="client/[id]" options={{ title: 'Cliente' }} />

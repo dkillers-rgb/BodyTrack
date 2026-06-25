@@ -1,6 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { User, setToken } from '../services/api';
+import { api, User, setToken } from '../services/api';
+
+const DEFAULT_TEST_USER = {
+  email: 'teste@bodytrack.com',
+  password: 'Teste123!',
+};
 
 interface AuthContextType {
   user: User | null;
@@ -16,17 +21,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    SecureStore.getItemAsync('bodytrack_token').then((token) => {
+    async function restoreSession() {
+      const token = await SecureStore.getItemAsync('bodytrack_token');
+
       if (token) {
         setToken(token);
-        SecureStore.getItemAsync('bodytrack_user').then((stored) => {
-          if (stored) setUser(JSON.parse(stored));
-          setIsLoading(false);
-        });
-      } else {
+        const stored = await SecureStore.getItemAsync('bodytrack_user');
+        if (stored) setUser(JSON.parse(stored));
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const result = await api.auth.login(DEFAULT_TEST_USER.email, DEFAULT_TEST_USER.password);
+        await SecureStore.setItemAsync('bodytrack_token', result.token);
+        await SecureStore.setItemAsync('bodytrack_user', JSON.stringify(result.user));
+        setToken(result.token);
+        setUser(result.user);
+      } catch (error) {
+        console.warn('Auto login failed', error);
+      } finally {
         setIsLoading(false);
       }
-    });
+    }
+
+    restoreSession();
   }, []);
 
   const login = async (user: User, token: string) => {

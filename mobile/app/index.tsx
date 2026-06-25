@@ -1,20 +1,14 @@
 import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { api, Overview } from '../services/api';
 import { useState } from 'react';
 
 export default function HomeScreen() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, logout, login } = useAuth();
   const router = useRouter();
   const [overview, setOverview] = useState<Overview | null>(null);
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login');
-    }
-  }, [isLoading, user]);
 
   useEffect(() => {
     if (user) {
@@ -22,7 +16,33 @@ export default function HomeScreen() {
     }
   }, [user]);
 
-  if (isLoading || !user) return null;
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    const handleRetry = async () => {
+      try {
+        const res = await api.auth.login('teste@bodytrack.com', 'Teste123!');
+        await login(res.user, res.token);
+      } catch (err) {
+        console.error('Retry login failed', err);
+      }
+    };
+
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: '#e8edf4', marginBottom: 12 }}>Usuário não autenticado</Text>
+        <TouchableOpacity style={styles.menuCard} onPress={handleRetry}>
+          <Text style={styles.menuTitle}>Tentar auto-login</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const menuItems = [
     { title: 'Ler QR Code', icon: '📷', route: '/scan' },
@@ -65,6 +85,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   greeting: { fontSize: 24, fontWeight: '700', color: '#e8edf4', marginBottom: 24 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   statCard: {
