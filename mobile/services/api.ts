@@ -10,6 +10,7 @@ const getLocalApiUrl = () => {
 
 const API_URL =
   Constants.expoConfig?.extra?.apiUrl ||
+  Constants.manifest?.extra?.apiUrl ||
   process.env.EXPO_PUBLIC_API_URL ||
   getLocalApiUrl();
 

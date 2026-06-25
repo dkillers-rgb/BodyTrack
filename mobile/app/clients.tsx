@@ -136,7 +136,7 @@ export default function ClientsScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <ScrollView>
-              <Text style={styles.modalTitle}>Editar cliente</Text>
+              <Text style={styles.modalTitle}>{editingClient ? 'Editar cliente' : 'Cadastrar cliente'}</Text>
 
               <Text style={styles.label}>Nome</Text>
               <TextInput
@@ -227,6 +227,19 @@ const styles = StyleSheet.create({
   },
   editBtnText: { color: '#3b82f6', fontWeight: '600', fontSize: 14 },
   empty: { color: '#8b9cb3', textAlign: 'center', marginTop: 40 },
+  newClientBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  newClientBtnText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
