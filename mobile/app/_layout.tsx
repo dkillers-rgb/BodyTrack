@@ -19,7 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="reports" options={{ title: 'Relatórios' }} />
         <Stack.Screen name="history" options={{ title: 'Histórico' }} />
         <Stack.Screen name="clients" options={{ title: 'Clientes' }} />
-        <Stack.Screen name="client/[id]" options={{ title: 'Cliente' }} />
+        <Stack.Screen name="client/[id]" options={{ title: 'Relatório' }} />
       </Stack>
     </AuthProvider>
   );

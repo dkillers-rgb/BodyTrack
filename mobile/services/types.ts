@@ -61,11 +61,28 @@ export interface OcrPreview {
   ocr: { rawText: string };
 }
 
+export interface ChartPoint {
+  date: string;
+  weight: number;
+  skeletalMuscle: number;
+  bodyFat: number;
+}
+
+export interface ClientDashboardSummary {
+  totalEvaluations: number;
+  latestWeight?: number;
+  latestMuscle?: number;
+  latestFat?: number;
+  firstExam?: string;
+  lastExam?: string;
+}
+
 export interface ClientDashboard {
   client: Client;
-  chartData: { date: string; weight: number; skeletalMuscle: number; bodyFat: number }[];
+  evaluations: Evaluation[];
+  chartData: ChartPoint[];
   analysis: string;
-  summary: Record<string, unknown>;
+  summary: ClientDashboardSummary;
 }
 
 export interface Overview {

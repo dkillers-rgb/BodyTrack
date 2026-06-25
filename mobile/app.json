@@ -19,6 +19,7 @@
         "backgroundColor": "#0f1419"
       },
       "package": "com.bodytrack.app",
+      "usesCleartextTraffic": true,
       "permissions": [
         "CAMERA",
         "android.permission.CAMERA"

@@ -241,6 +241,7 @@ export const reportsRepo = {
         age: detail.age,
         height: detail.height,
       },
+      evaluations: detail.evaluations,
       chartData,
       analysis,
       summary: {

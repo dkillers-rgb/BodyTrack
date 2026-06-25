@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { api, Evaluation } from '../services/api';
 
 export default function HistoryScreen() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     api.reports.overview().then((o) => setEvaluations(o.recentEvaluations)).catch(console.error);
@@ -15,7 +17,11 @@ export default function HistoryScreen() {
         data={evaluations}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => item.clientId && router.push(`/client/${item.clientId}` as never)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.name}>{item.client?.name || '—'}</Text>
             <Text style={styles.date}>
               {new Date(item.examDate).toLocaleDateString('pt-BR')}
@@ -28,7 +34,8 @@ export default function HistoryScreen() {
             {item.aiAnalysis && (
               <Text style={styles.analysis}>{item.aiAnalysis}</Text>
             )}
-          </View>
+            <Text style={styles.tapHint}>Ver relatório completo →</Text>
+          </TouchableOpacity>
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>Nenhuma avaliação registrada</Text>
@@ -53,5 +60,6 @@ const styles = StyleSheet.create({
   metrics: { flexDirection: 'row', gap: 12, marginTop: 8 },
   metric: { fontSize: 13, color: '#e8edf4' },
   analysis: { fontSize: 12, color: '#8b9cb3', marginTop: 8, fontStyle: 'italic' },
+  tapHint: { color: '#3b82f6', fontSize: 12, marginTop: 10, fontWeight: '500' },
   empty: { color: '#8b9cb3', textAlign: 'center', marginTop: 40 },
 });
