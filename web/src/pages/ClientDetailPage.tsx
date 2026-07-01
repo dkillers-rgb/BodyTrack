@@ -186,8 +186,12 @@ export default function ClientDetailPage() {
           <div className="stat-label">Músculo (kg)</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">{summary.latestFat ?? '—'}</div>
-          <div className="stat-label">Gordura (kg)</div>
+          <div className="stat-value">
+            {summary.latestWeight && summary.latestFat != null
+              ? `${((summary.latestFat / summary.latestWeight) * 100).toFixed(1)}%`
+              : '—'}
+          </div>
+          <div className="stat-label">Gordura corporal (%)</div>
         </div>
       </div>
 

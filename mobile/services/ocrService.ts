@@ -57,16 +57,28 @@ function flattenMlKitLines(result: {
   return lines;
 }
 
+function ensureReadableImageUri(uri: string): string {
+  if (uri.startsWith('file://') || uri.startsWith('content://') || /^https?:\/\//i.test(uri)) {
+    return uri;
+  }
+  if (uri.startsWith('/')) {
+    return `file://${uri}`;
+  }
+  return uri;
+}
+
 function getImageSize(uri: string): Promise<{ width: number; height: number }> {
+  const readableUri = ensureReadableImageUri(uri);
   return new Promise((resolve, reject) => {
-    Image.getSize(uri, (width, height) => resolve({ width, height }), reject);
+    Image.getSize(readableUri, (width, height) => resolve({ width, height }), reject);
   });
 }
 
 /** Recorte da seção 2 (Muscle Fat Analysis) para melhorar leitura dos valores no fim das barras. */
 async function ocrMuscleFatSection(uri: string): Promise<string | null> {
   try {
-    const { width, height } = await getImageSize(uri);
+    const readableUri = ensureReadableImageUri(uri);
+    const { width, height } = await getImageSize(readableUri);
     if (!width || !height) return null;
 
     const cropRegions = [
@@ -78,7 +90,7 @@ async function ocrMuscleFatSection(uri: string): Promise<string | null> {
     const parts: string[] = [];
     for (const crop of cropRegions) {
       const cropped = await ImageManipulator.manipulateAsync(
-        uri,
+        readableUri,
         [{ crop }],
         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
       );
@@ -93,12 +105,13 @@ async function ocrMuscleFatSection(uri: string): Promise<string | null> {
 }
 
 async function recognizeWithSpatial(uri: string): Promise<OcrResult> {
-  const result = await TextRecognition.recognize(uri);
+  const readableUri = ensureReadableImageUri(uri);
+  const result = await TextRecognition.recognize(readableUri);
   const rawText = result.text || '';
   const lines = flattenMlKitLines(result as Parameters<typeof flattenMlKitLines>[0]);
 
   let combinedText = rawText;
-  const sectionText = await ocrMuscleFatSection(uri);
+  const sectionText = await ocrMuscleFatSection(readableUri);
   if (sectionText) {
     combinedText += `\n\n--- MFA SECTION OCR ---\n${sectionText}`;
   }

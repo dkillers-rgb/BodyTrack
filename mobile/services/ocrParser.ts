@@ -832,7 +832,7 @@ function extractSection(
   }
 
   const nextSection = afterHeader.search(
-    /\n\s*(?:\d[\s.]*)?[A-ZÃÃ€Ã‚ÃƒÃ‰ÃŠÃÃ“Ã”Ã•ÃšÃ‡][A-Za-zÃ€-Ãº\s]{6,}/
+    /\n\s*(?:\d[\s.]*)?[A-Z][A-Za-z\s]{6,}/
   );
   if (nextSection > 0) {
     const candidate = rest.slice(0, match[0].length + nextSection);

@@ -1,6 +1,6 @@
 import Tesseract from 'tesseract.js';
 import sharp from 'sharp';
-import { parseOcrText, OcrResult } from './ocrParser';
+import { parseOcrText, OcrResult, OcrLine } from './ocrParser';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -191,36 +191,44 @@ async function ocrMuscleFatSection(imageBuffer: Buffer): Promise<string | null> 
   const imageHeight = metadata.height || 0;
   if (!imageWidth || !imageHeight) return null;
 
-  const top = Math.floor(imageHeight * 0.18);
-  const height = Math.floor(imageHeight * 0.16);
-  const left = Math.floor(imageWidth * 0.02);
-  const width = Math.floor(imageWidth * 0.96);
+  const cropRegions = [
+    { left: 0.02, top: 0.33, width: 0.96, height: 0.18 },
+    { left: 0.25, top: 0.33, width: 0.55, height: 0.20 },
+    { left: 0.28, top: 0.33, width: 0.52, height: 0.20 },
+  ];
 
   try {
-    const cropRegion = {
-      left,
-      top: Math.min(top, imageHeight - 1),
-      width: Math.min(width, imageWidth - left),
-      height: Math.min(height, imageHeight - top),
-    };
+    const parts: string[] = [];
 
-    const cropped = await sharp(imageBuffer)
-      .extract(cropRegion)
-      .resize({ width: 1600, withoutEnlargement: false })
-      .sharpen()
-      .png()
-      .toBuffer();
+    for (const region of cropRegions) {
+      const cropRegion = {
+        left: Math.floor(imageWidth * region.left),
+        top: Math.min(Math.floor(imageHeight * region.top), imageHeight - 1),
+        width: Math.min(Math.floor(imageWidth * region.width), imageWidth - Math.floor(imageWidth * region.left)),
+        height: Math.min(
+          Math.floor(imageHeight * region.height),
+          imageHeight - Math.floor(imageHeight * region.top)
+        ),
+      };
 
-    const inverted = await sharp(cropped).negate().linear(1.3, -30).sharpen().png().toBuffer();
+      const cropped = await sharp(imageBuffer)
+        .extract(cropRegion)
+        .resize({ width: 1600, withoutEnlargement: false })
+        .sharpen()
+        .png()
+        .toBuffer();
 
-    const [normalOcr, invertedOcr] = await Promise.all([
-      Tesseract.recognize(cropped, 'eng', { logger: () => {} }),
-      Tesseract.recognize(inverted, 'eng', { logger: () => {} }),
-    ]);
+      const inverted = await sharp(cropped).negate().linear(1.3, -30).sharpen().png().toBuffer();
 
-    const parts = [normalOcr.data.text, invertedOcr.data.text]
-      .map((text) => text?.trim())
-      .filter(Boolean);
+      const [normalOcr, invertedOcr] = await Promise.all([
+        Tesseract.recognize(cropped, 'eng', { logger: () => {} }),
+        Tesseract.recognize(inverted, 'eng', { logger: () => {} }),
+      ]);
+
+      for (const text of [normalOcr.data.text, invertedOcr.data.text]) {
+        if (text?.trim()) parts.push(text.trim());
+      }
+    }
 
     return parts.length ? parts.join('\n') : null;
   } catch {
@@ -235,13 +243,32 @@ async function processWithTesseract(imageBuffer: Buffer): Promise<OcrResult> {
     logger: () => {},
   });
 
+  const spatialLines = flattenTesseractLines(fullData);
+
   let combinedText = fullData.text;
   const sectionText = await ocrMuscleFatSection(processed);
   if (sectionText) {
     combinedText += `\n\n--- MFA SECTION OCR ---\n${sectionText}`;
   }
 
-  return parseOcrText(combinedText);
+  return parseOcrText(combinedText, { lines: spatialLines });
+}
+
+function flattenTesseractLines(data: {
+  lines?: Array<{ text?: string; bbox?: { x0: number; y0: number; x1: number; y1: number } }>;
+}): OcrLine[] {
+  const lines: OcrLine[] = [];
+  for (const line of data.lines ?? []) {
+    if (!line.text?.trim() || !line.bbox) continue;
+    lines.push({
+      text: line.text.trim(),
+      left: line.bbox.x0,
+      top: line.bbox.y0,
+      right: line.bbox.x1,
+      bottom: line.bbox.y1,
+    });
+  }
+  return lines;
 }
 
 async function processWithGoogleVision(imageBuffer: Buffer): Promise<OcrResult> {

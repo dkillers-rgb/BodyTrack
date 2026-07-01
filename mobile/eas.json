@@ -1,11 +1,28 @@
 {
   "cli": {
-    "version": ">= 6.0.0"
+    "version": ">= 6.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "production": {
+      "node": "20.18.0",
+      "env": {
+        "NODE_ENV": "production"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest"
+      }
+    },
+    "preview": {
+      "node": "20.18.0",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "image": "latest"
       }
     }
   }

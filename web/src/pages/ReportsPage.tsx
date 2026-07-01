@@ -29,13 +29,23 @@ export default function ReportsPage() {
       </div>
 
       <div style={{ marginBottom: 16 }}>
+        <label htmlFor="report-search" style={{ display: 'block', marginBottom: 6, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          Buscar por nome
+        </label>
         <input
+          id="report-search"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filtrar por nome"
+          placeholder="Digite o nome do cliente..."
           style={{ width: '100%', padding: '8px 12px', fontSize: '1rem' }}
         />
+        {query.trim().length > 0 && (
+          <p style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            {filteredClients.length} cliente{filteredClients.length !== 1 ? 's' : ''} encontrado
+            {filteredClients.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
       <div className="grid-2">
@@ -63,6 +73,14 @@ export default function ReportsPage() {
         <div className="card">
           <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
             Cadastre clientes e realize avaliações para gerar relatórios.
+          </p>
+        </div>
+      )}
+
+      {clients.length > 0 && filteredClients.length === 0 && (
+        <div className="card">
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+            Nenhum cliente encontrado com esse nome.
           </p>
         </div>
       )}

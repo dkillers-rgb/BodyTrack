@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="bodytrack_dark">#1F1B24</color>
+    <color name="bodytrack_orange">#FF6D00</color>
+    <color name="bodytrack_cyan">#00D4FF</color>
 </resources>
