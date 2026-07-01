@@ -51,7 +51,9 @@ export default function ClientReport({ data }: Props) {
         </View>
       </View>
 
-      <EvolutionChart data={chartData} />
+      <View style={styles.chartSection}>
+        <EvolutionChart data={chartData} />
+      </View>
 
       {analysis ? (
         <View style={styles.section}>
@@ -94,6 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 4,
     padding: 20,
+    overflow: 'hidden',
   },
   header: {
     borderBottomWidth: 2,
@@ -141,6 +144,11 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 4,
     textAlign: 'center',
+  },
+  chartSection: {
+    width: '100%',
+    marginBottom: 18,
+    overflow: 'hidden',
   },
   section: {
     marginBottom: 18,

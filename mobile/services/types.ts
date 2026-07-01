@@ -61,6 +61,13 @@ export interface OcrPreview {
   ocr: { rawText: string };
 }
 
+/** Dados retornados por GET /report?key= (apenas composição corporal) */
+export interface ReportData {
+  peso: number;
+  massaMuscularEsqueletica: number;
+  gorduraCorporal: number;
+}
+
 export interface ChartPoint {
   date: string;
   weight: number;

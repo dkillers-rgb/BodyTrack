@@ -2,7 +2,8 @@ import TextRecognition from '@react-native-ml-kit/text-recognition';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Image } from 'react-native';
 import { parseOcrText, OcrResult, OcrLine } from './ocrParser';
-import { downloadToCache, removeFile, resolveLocalUri } from './fileStorage';
+import { resolveQrReport } from './reportUrlResolver';
+import { removeFile, resolveLocalUri } from './fileStorage';
 import type { OcrPreview } from './types';
 
 function isPdfPath(path: string): boolean {
@@ -145,7 +146,27 @@ export async function processReportFile(
 
 /** Baixa imagem da URL do QR, extrai dados e descarta o arquivo temporário. */
 export async function processQrUrl(url: string): Promise<OcrPreview> {
-  const tempUri = await downloadToCache(url.trim());
+  const resolved = await resolveQrReport(url.trim());
+
+  if (
+    resolved.muscleFat?.weight != null &&
+    resolved.muscleFat?.skeletalMuscle != null &&
+    resolved.muscleFat?.bodyFat != null
+  ) {
+    return toOcrPreview(undefined, {
+      rawText: resolved.rawText || 'Dados extraídos da API Bodbody.',
+      patient: {},
+      muscleFat: resolved.muscleFat,
+    });
+  }
+
+  if (!resolved.imageUri) {
+    throw new Error(
+      'Não foi possível encontrar a imagem do relatório na página. Verifique se o link do QR Code está acessível.'
+    );
+  }
+
+  const tempUri = resolved.imageUri;
 
   try {
     if (isPdfPath(tempUri)) {

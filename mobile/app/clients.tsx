@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { api, Client, ClientInput } from '../services/api';
 
 const emptyForm: ClientInput = { name: '', gender: 'MALE', age: 0, height: 0 };
@@ -35,19 +35,30 @@ export default function ClientsScreen() {
   const [form, setForm] = useState<ClientInput>(emptyForm);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
+  const params = useLocalSearchParams<{ create?: string }>();
 
   const filteredClients = useMemo(
     () => clients.filter((c) => matchesSearch(c, search)),
     [clients, search]
   );
 
-  const loadClients = () => {
+  const loadClients = useCallback(() => {
     api.clients.list().then(setClients).catch(console.error);
-  };
+  }, []);
 
   useEffect(() => {
     loadClients();
-  }, []);
+  }, [loadClients]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (params.create === '1') {
+        setEditingClient(null);
+        setForm(emptyForm);
+        setIsCreating(true);
+      }
+    }, [params.create])
+  );
 
   const openEdit = (client: Client) => {
     setEditingClient(client);
@@ -90,15 +101,21 @@ export default function ClientsScreen() {
     try {
       if (editingClient) {
         await api.clients.update(editingClient.id, form);
+        closeModal();
+        loadClients();
+        Alert.alert('Sucesso', 'Cliente atualizado com sucesso.');
       } else {
         await api.clients.create(form);
+        closeModal();
+        loadClients();
+        if (params.create === '1') {
+          Alert.alert('Sucesso', 'Cliente cadastrado com sucesso.', [
+            { text: 'Voltar à avaliação', onPress: () => router.back() },
+          ]);
+        } else {
+          Alert.alert('Sucesso', 'Cliente cadastrado com sucesso.');
+        }
       }
-      closeModal();
-      loadClients();
-      Alert.alert(
-        'Sucesso',
-        editingClient ? 'Cliente atualizado com sucesso.' : 'Cliente cadastrado com sucesso.'
-      );
     } catch (err) {
       Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao salvar');
     } finally {

@@ -38,14 +38,21 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "extraMavenRepos": [
+              "https://jitpack.io",
+              "https://repo1.maven.org/maven2"
+            ]
           }
         }
       ],
-      "./plugins/withAndroidCleartextTraffic.js"
+      "./plugins/withAndroidCleartextTraffic.js",
+      "./plugins/withAndroidLocalBuild.js",
+      "expo-asset"
     ],
     "extra": {
       "storageMode": "local",
+      "apiUrl": "https://api.bodytrack.com",
       "router": {
         "origin": false
       },

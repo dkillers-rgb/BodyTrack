@@ -1,6 +1,7 @@
 import { clientsRepo, evaluationsRepo, reportsRepo } from '../db/repository';
 import { saveFromUri } from './fileStorage';
-import { processQrUrl, processReportFile, toOcrPreview } from './ocrService';
+import { processReportFile, toOcrPreview } from './ocrService';
+import { processQrCodeUrl } from './reportApiService';
 import type {
   Client,
   ClientDashboard,
@@ -49,10 +50,10 @@ export const api = {
     delete: (id: number) => clientsRepo.delete(id),
   },
   evaluations: {
-    /** Requer internet: baixa temporariamente para OCR e descarta a imagem. */
+    /** Requer internet: extrai key do QR e consulta a API BodyTrack. */
     scanQr: async (url: string): Promise<OcrPreview> => {
       if (!url?.trim()) throw new Error('URL do relatório é obrigatória');
-      return processQrUrl(url);
+      return processQrCodeUrl(url);
     },
     /** Offline: copia o arquivo para o armazenamento local e roda OCR (imagens). */
     processImage: async (

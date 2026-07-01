@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Rect, Line, Path, Circle, Text as SvgText, G } from 'react-native-svg';
 import type { ChartPoint } from '../services/types';
+
+const MAX_POINTS = 6;
 
 interface Props {
   data: ChartPoint[];
@@ -25,10 +27,24 @@ const PANELS: PanelConfig[] = [
   },
 ];
 
-const MARGIN = { top: 8, right: 12, bottom: 44, left: 8 };
-const LABEL_WIDTH = 130;
-const PANEL_HEIGHT = 90;
+const MARGIN = { top: 8, right: 8, bottom: 40, left: 6 };
+const PANEL_HEIGHT = 88;
 const PANEL_GAP = 6;
+/** Espaçamento alvo entre pontos consecutivos (px) — mantém as séries mais compactas. */
+const POINT_SPACING = 32;
+const MAX_CHART_SPAN_RATIO = 0.72;
+
+function pointX(index: number, pointCount: number, chartLeft: number, chartWidth: number): number {
+  if (pointCount <= 1) return chartLeft + chartWidth / 2;
+
+  const idealSpan = (pointCount - 1) * POINT_SPACING;
+  const maxSpan = chartWidth * MAX_CHART_SPAN_RATIO;
+  const span = Math.min(idealSpan, maxSpan);
+  const spacing = span / (pointCount - 1);
+  const startX = chartLeft + (chartWidth - span) / 2;
+
+  return startX + index * spacing;
+}
 
 function formatDate(isoDate: string): string {
   const date = new Date(`${isoDate}T12:00:00`);
@@ -86,11 +102,9 @@ function MetricPanel({
   const ticks = generateTicks(min, max);
   const chartTop = panelTop + 14;
   const chartBottom = panelTop + PANEL_HEIGHT - 14;
+  const panelWidth = svgWidth - MARGIN.left - MARGIN.right;
 
-  const pointX = (index: number) => {
-    if (pointCount <= 1) return chartLeft + chartWidth / 2;
-    return chartLeft + (index / (pointCount - 1)) * chartWidth;
-  };
+  const pointXAt = (index: number) => pointX(index, pointCount, chartLeft, chartWidth);
 
   const valueToY = (value: number) => {
     const chartHeight = PANEL_HEIGHT - 28;
@@ -100,7 +114,7 @@ function MetricPanel({
 
   const linePath = values
     .map((value, index) => {
-      const x = pointX(index);
+      const x = pointXAt(index);
       const y = valueToY(value);
       return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     })
@@ -111,16 +125,28 @@ function MetricPanel({
       <Rect
         x={MARGIN.left}
         y={panelTop}
-        width={svgWidth - MARGIN.left - MARGIN.right}
+        width={panelWidth}
         height={PANEL_HEIGHT}
         fill="#ffffff"
         stroke="#e5e7eb"
         strokeWidth={1}
       />
-      <SvgText x={MARGIN.left + 8} y={panelTop + PANEL_HEIGHT / 2 - 4} fill="#111111" fontSize={10} fontWeight="600">
+      <SvgText
+        x={MARGIN.left + 6}
+        y={panelTop + PANEL_HEIGHT / 2 - 4}
+        fill="#111111"
+        fontSize={9}
+        fontWeight="600"
+      >
         {config.label}
       </SvgText>
-      <SvgText x={MARGIN.left + 8} y={panelTop + PANEL_HEIGHT / 2 + 10} fill="#374151" fontSize={9} fontWeight="500">
+      <SvgText
+        x={MARGIN.left + 6}
+        y={panelTop + PANEL_HEIGHT / 2 + 10}
+        fill="#374151"
+        fontSize={8}
+        fontWeight="500"
+      >
         ({config.unit})
       </SvgText>
 
@@ -129,27 +155,36 @@ function MetricPanel({
         return (
           <G key={`${config.label}-tick-${tick}`}>
             <Line x1={chartLeft} y1={y} x2={chartLeft + chartWidth} y2={y} stroke="#e5e7eb" strokeWidth={1} />
-            <SvgText x={chartLeft - 6} y={y + 3} fill="#6b7280" fontSize={8} textAnchor="end">
+            <SvgText x={chartLeft - 4} y={y + 3} fill="#6b7280" fontSize={7} textAnchor="end">
               {formatValue(tick, config.decimals)}
             </SvgText>
           </G>
         );
       })}
 
-      <Line x1={chartLeft} y1={chartBottom} x2={chartLeft + chartWidth} y2={chartBottom} stroke="#d1d5db" strokeWidth={1} />
-      <Path d={linePath} fill="none" stroke="#111111" strokeWidth={1.5} />
+      <Line
+        x1={chartLeft}
+        y1={chartBottom}
+        x2={chartLeft + chartWidth}
+        y2={chartBottom}
+        stroke="#d1d5db"
+        strokeWidth={1}
+      />
+      {values.length > 1 && (
+        <Path d={linePath} fill="none" stroke="#111111" strokeWidth={1.5} />
+      )}
 
       {values.map((value, index) => {
-        const x = pointX(index);
+        const x = pointXAt(index);
         const y = valueToY(value);
         return (
           <G key={`${config.label}-point-${index}`}>
-            <Circle cx={x} cy={y} r={3.5} fill="#111111" stroke="#ffffff" strokeWidth={1} />
+            <Circle cx={x} cy={y} r={3} fill="#111111" stroke="#ffffff" strokeWidth={1} />
             <SvgText
               x={x}
-              y={Math.max(chartTop + 10, y - 8)}
+              y={Math.max(chartTop + 10, y - 7)}
               fill="#111111"
-              fontSize={9}
+              fontSize={8}
               fontWeight="600"
               textAnchor="middle"
             >
@@ -163,10 +198,10 @@ function MetricPanel({
         dates.map((date, index) => (
           <SvgText
             key={`${config.label}-date-${date}-${index}`}
-            x={pointX(index)}
-            y={panelTop + PANEL_HEIGHT + 20}
+            x={pointXAt(index)}
+            y={panelTop + PANEL_HEIGHT + 18}
             fill="#111111"
-            fontSize={8}
+            fontSize={7}
             textAnchor="middle"
           >
             {formatDate(date)}
@@ -177,59 +212,103 @@ function MetricPanel({
 }
 
 export default function EvolutionChart({ data }: Props) {
-  const { width: screenWidth } = useWindowDimensions();
-  const svgWidth = Math.min(screenWidth - 32, 920);
-  const chartLeft = MARGIN.left + LABEL_WIDTH;
-  const chartWidth = svgWidth - chartLeft - MARGIN.right;
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  const sortedData = useMemo(
-    () => [...data].sort((a, b) => a.date.localeCompare(b.date)),
-    [data]
-  );
+  const sortedData = useMemo(() => {
+    const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
+    return sorted.slice(-MAX_POINTS);
+  }, [data]);
+
+  const svgWidth = Math.max(containerWidth, 0);
+  const labelWidth = Math.min(108, Math.max(72, svgWidth * 0.3));
+  const chartLeft = MARGIN.left + labelWidth;
+  const chartWidth = Math.max(svgWidth - chartLeft - MARGIN.right, 40);
 
   const svgHeight =
     MARGIN.top + PANELS.length * PANEL_HEIGHT + (PANELS.length - 1) * PANEL_GAP + MARGIN.bottom;
 
   if (sortedData.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>Nenhuma avaliação registrada ainda.</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Histórico da Composição Corporal</Text>
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Nenhuma avaliação registrada ainda.</Text>
+        </View>
       </View>
     );
   }
 
-  const dates = sortedData.map((point) => point.date);
-
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(event) => {
+        const width = event.nativeEvent.layout.width;
+        if (width > 0 && width !== containerWidth) {
+          setContainerWidth(width);
+        }
+      }}
+    >
       <Text style={styles.title}>Histórico da Composição Corporal</Text>
-      <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-        {PANELS.map((panel, index) => {
-          const panelTop = MARGIN.top + index * (PANEL_HEIGHT + PANEL_GAP);
-          const values = sortedData.map(panel.getValue);
-          return (
-            <MetricPanel
-              key={panel.label}
-              config={panel}
-              values={values}
-              panelTop={panelTop}
-              pointCount={sortedData.length}
-              showDates={index === PANELS.length - 1}
-              dates={dates}
-              svgWidth={svgWidth}
-              chartLeft={chartLeft}
-              chartWidth={chartWidth}
-            />
-          );
-        })}
-      </Svg>
+      {sortedData.length >= MAX_POINTS && (
+        <Text style={styles.subtitle}>Últimas {MAX_POINTS} avaliações</Text>
+      )}
+      {svgWidth > 0 && (
+        <View style={styles.chartClip}>
+          <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+            {PANELS.map((panel, index) => {
+              const panelTop = MARGIN.top + index * (PANEL_HEIGHT + PANEL_GAP);
+              const values = sortedData.map(panel.getValue);
+              return (
+                <MetricPanel
+                  key={panel.label}
+                  config={panel}
+                  values={values}
+                  panelTop={panelTop}
+                  pointCount={sortedData.length}
+                  showDates={index === PANELS.length - 1}
+                  dates={sortedData.map((point) => point.date)}
+                  svgWidth={svgWidth}
+                  chartLeft={chartLeft}
+                  chartWidth={chartWidth}
+                />
+              );
+            })}
+          </Svg>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 16 },
-  title: { fontSize: 14, fontWeight: '700', color: '#111111', marginBottom: 10 },
-  empty: { padding: 20, alignItems: 'center' },
-  emptyText: { color: '#6b7280', fontSize: 13 },
+  container: {
+    width: '100%',
+    marginBottom: 4,
+  },
+  chartClip: {
+    width: '100%',
+    overflow: 'hidden',
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111111',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  empty: {
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 4,
+  },
+  emptyText: {
+    color: '#6b7280',
+    fontSize: 13,
+  },
 });

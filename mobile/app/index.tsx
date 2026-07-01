@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { api, Overview } from '../services/api';
-import { useState } from 'react';
+import { exitApp } from '../utils/exitApp';
 
 export default function HomeScreen() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [overview, setOverview] = useState<Overview | null>(null);
 
@@ -26,10 +26,18 @@ export default function HomeScreen() {
 
   const menuItems = [
     { title: 'Ler QR Code', icon: '📷', route: '/scan' },
+    { title: 'Preencher avaliação', icon: '✏️', route: '/manual-entry', params: { showHint: '1' } },
     { title: 'Relatórios', icon: '📈', route: '/reports' },
     { title: 'Histórico', icon: '📋', route: '/history' },
     { title: 'Clientes', icon: '👥', route: '/clients' },
   ];
+
+  const handleExit = () => {
+    Alert.alert('Sair do aplicativo', 'Deseja fechar o BodyTrack?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: exitApp },
+    ]);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -51,14 +59,18 @@ export default function HomeScreen() {
         <TouchableOpacity
           key={item.route}
           style={styles.menuCard}
-          onPress={() => router.push(item.route as never)}
+          onPress={() =>
+            item.params
+              ? router.push({ pathname: item.route, params: item.params } as never)
+              : router.push(item.route as never)
+          }
         >
           <Text style={styles.menuIcon}>{item.icon}</Text>
           <Text style={styles.menuTitle}>{item.title}</Text>
         </TouchableOpacity>
       ))}
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleExit}>
         <Text style={styles.logoutText}>Sair</Text>
       </TouchableOpacity>
     </ScrollView>

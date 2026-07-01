@@ -16,6 +16,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ title: 'BodyTrack' }} />
         <Stack.Screen name="scan" options={{ title: 'Ler QR Code' }} />
+        <Stack.Screen name="manual-entry" options={{ title: 'Preencher avaliação' }} />
         <Stack.Screen name="reports" options={{ title: 'Relatórios' }} />
         <Stack.Screen name="history" options={{ title: 'Histórico' }} />
         <Stack.Screen name="clients" options={{ title: 'Clientes' }} />

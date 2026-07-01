@@ -14,6 +14,8 @@ const NETWORK_SECURITY_CONFIG = `<?xml version="1.0" encoding="utf-8"?>
     </trust-anchors>
   </base-config>
   <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="true">bodbody.com.cn</domain>
+    <domain includeSubdomains="true">bodbody.cn</domain>
     <domain includeSubdomains="false">119.23.70.228</domain>
   </domain-config>
 </network-security-config>
