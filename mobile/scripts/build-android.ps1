@@ -29,9 +29,15 @@ Write-Host ">> Instalando dependencias npm do app mobile..."
 Set-Location $MobileRoot
 npm install
 
+Write-Host ">> Gerando icones do app..."
+node (Join-Path $MobileRoot "scripts\generate-icons.js")
+
+Write-Host ">> Sincronizando projeto Android (expo prebuild)..."
+Set-Location $MobileRoot
+npx expo prebuild --platform android --no-install
+
 if (-not (Test-Path $AndroidRoot)) {
-  Write-Host ">> Gerando pasta android (expo prebuild)..."
-  npx expo prebuild --platform android --no-install
+  throw "Pasta android nao foi gerada pelo prebuild."
 }
 
 Write-Host ">> Compilando APK release..."

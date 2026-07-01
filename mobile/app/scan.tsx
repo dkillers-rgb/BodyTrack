@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import * as DocumentPicker from 'expo-document-picker';
 import { api } from '../services/api';
 import { navigateToManualEntry } from '../utils/manualEntryNavigation';
 
@@ -91,38 +90,6 @@ export default function ScanScreen() {
     }
   };
 
-  const pickReport = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['image/*', 'application/pdf'],
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets[0];
-    const isPdf =
-      asset.mimeType === 'application/pdf' ||
-      asset.name?.toLowerCase().endsWith('.pdf');
-
-    setProcessing(true);
-    try {
-      const ocrResult = await api.evaluations.processImage(
-        asset.uri,
-        isPdf ? 'application/pdf' : asset.mimeType || 'image/jpeg',
-        asset.name
-      );
-      setScanned(false);
-      navigateToManualEntry(router, ocrResult, { showHint: !hasMuscleFatData(ocrResult) });
-    } catch (err) {
-      Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao processar arquivo', [
-        { text: 'Preencher manualmente', onPress: () => goToManualEntry(true) },
-        { text: 'OK', style: 'cancel' },
-      ]);
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   if (!permission?.granted) {
     return (
       <View style={styles.center}>
@@ -149,9 +116,6 @@ export default function ScanScreen() {
           <Text style={styles.overlayHint}>Consultando equipamento TCY</Text>
         </View>
       )}
-      <TouchableOpacity style={styles.uploadBtn} onPress={pickReport} disabled={processing}>
-        <Text style={styles.btnText}>📁 Enviar imagem ou PDF do relatório</Text>
-      </TouchableOpacity>
       <TouchableOpacity
         style={styles.manualBtn}
         onPress={() => goToManualEntry(true)}
@@ -182,13 +146,6 @@ const styles = StyleSheet.create({
   },
   overlayText: { color: '#fff', fontSize: 18, fontWeight: '600' },
   overlayHint: { color: '#94a3b8', fontSize: 13 },
-  uploadBtn: {
-    backgroundColor: '#1a2332',
-    padding: 16,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderColor: '#2d3a4f',
-  },
   manualBtn: {
     backgroundColor: '#334155',
     padding: 14,

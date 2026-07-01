@@ -16,7 +16,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0f1419"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1A2E"
       },
       "package": "com.bodytrack.app",
       "usesCleartextTraffic": true,

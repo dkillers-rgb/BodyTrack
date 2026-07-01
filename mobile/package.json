@@ -15,6 +15,7 @@
     "android:apk": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1",
     "android:apk:debug": "cd android && gradlew.bat assembleDebug",
     "android:apk:release": "cd android && gradlew.bat assembleRelease",
+    "icons": "node scripts/generate-icons.js",
     "build": "echo \"skip web build\"",
     "appflow:build": "echo \"skip web build\"",
     "eas:login": "npx eas login",
@@ -52,6 +53,7 @@
     "@expo/config-plugins": "~9.0.0",
     "@types/react": "~18.3.0",
     "eas-cli": "^20.3.0",
+    "sharp": "^0.35.3",
     "typescript": "^5.7.0"
   },
   "private": true
