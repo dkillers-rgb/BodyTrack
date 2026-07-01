@@ -56,25 +56,32 @@ export default function ScanScreen() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao processar';
       const isTimeout = message.includes('Tempo esgotado');
+      const isInvalidQr = message.includes('QR Code inválido');
       const isNetworkError =
-        isTimeout ||
-        message.includes('Network') ||
-        message.includes('fetch failed') ||
-        message.includes('Falha ao buscar') ||
-        message.includes('aborted') ||
-        message.includes('QR Code inválido');
+        !isInvalidQr &&
+        (isTimeout ||
+          message.includes('Network') ||
+          message.includes('fetch failed') ||
+          message.includes('Falha ao buscar') ||
+          message.includes('aborted') ||
+          message.includes('consultar o equipamento'));
 
-      if (isNetworkError) {
+      if (isInvalidQr) {
+        offerManualAfterError(
+          'QR Code inválido',
+          'Este QR Code não é do equipamento TCY. Escaneie o código exibido na tela do aparelho Bodbody.'
+        );
+      } else if (message.includes('Relatório não encontrado') || message.includes('não encontrado no equipamento')) {
+        offerManualAfterError(
+          'Relatório indisponível',
+          message
+        );
+      } else if (isNetworkError) {
         offerManualAfterError(
           isTimeout ? 'Tempo esgotado' : 'Sem conexão',
           isTimeout
             ? message
-            : 'Não foi possível buscar os dados do relatório. Verifique a internet e tente novamente, ou preencha manualmente.'
-        );
-      } else if (message.includes('key') || message.includes('Relatório não encontrado')) {
-        offerManualAfterError(
-          'QR Code inválido',
-          'Este QR Code não contém uma chave válida ou o relatório não foi encontrado. Preencha os dados manualmente.'
+            : 'Não foi possível conectar ao equipamento. Verifique se o celular está na mesma rede do aparelho e tente escanear o QR Code diretamente na tela.'
         );
       } else {
         offerManualAfterError('Erro', message);
@@ -139,7 +146,7 @@ export default function ScanScreen() {
         <View style={styles.overlay}>
           <ActivityIndicator color="#fff" size="large" />
           <Text style={styles.overlayText}>Buscando dados do relatório...</Text>
-          <Text style={styles.overlayHint}>Consultando API BodyTrack</Text>
+          <Text style={styles.overlayHint}>Consultando equipamento TCY</Text>
         </View>
       )}
       <TouchableOpacity style={styles.uploadBtn} onPress={pickReport} disabled={processing}>

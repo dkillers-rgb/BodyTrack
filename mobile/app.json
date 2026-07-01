@@ -52,7 +52,6 @@
     ],
     "extra": {
       "storageMode": "local",
-      "apiUrl": "https://api.bodytrack.com",
       "router": {
         "origin": false
       },
