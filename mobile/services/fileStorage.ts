@@ -59,6 +59,44 @@ export function resolveLocalUri(relativePath: string): string {
   return `${FileSystem.documentDirectory}${relativePath}`;
 }
 
+const COMPANY_DIR = `${FileSystem.documentDirectory}company/`;
+
+export async function saveCompanyLogo(
+  sourceUri: string,
+  mimeType?: string,
+  fileName?: string
+): Promise<string> {
+  const info = await FileSystem.getInfoAsync(COMPANY_DIR);
+  if (!info.exists) {
+    await FileSystem.makeDirectoryAsync(COMPANY_DIR, { intermediates: true });
+  }
+  const ext = extensionFromMime(mimeType, fileName);
+  const relativePath = `company/logo${ext}`;
+  const destUri = `${FileSystem.documentDirectory}${relativePath}`;
+  await FileSystem.copyAsync({ from: sourceUri, to: destUri });
+  return relativePath;
+}
+
+export async function readLocalFileAsDataUri(relativePath: string): Promise<string | undefined> {
+  try {
+    const uri = resolveLocalUri(relativePath);
+    const info = await FileSystem.getInfoAsync(uri);
+    if (!info.exists) return undefined;
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const lower = relativePath.toLowerCase();
+    const mime = lower.endsWith('.png')
+      ? 'image/png'
+      : lower.endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+    return `data:${mime};base64,${base64}`;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Baixa para cache temporário (OCR). Deve ser removido após o uso. */
 export async function downloadToCache(url: string): Promise<string> {
   try {

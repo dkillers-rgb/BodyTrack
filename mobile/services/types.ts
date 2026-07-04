@@ -33,6 +33,7 @@ export interface Evaluation {
   imagePath?: string;
   aiAnalysis?: string;
   rawOcrText?: string;
+  rawReportJson?: string;
   client?: Client;
 }
 
@@ -44,7 +45,10 @@ export interface EvaluationInput {
   bodyFat: number;
   imagePath?: string;
   rawOcrText?: string;
+  rawReportJson?: string;
 }
+
+import type { BodbodyReportSnapshot } from './bodbodyReportTypes';
 
 export interface OcrPreview {
   imagePath?: string;
@@ -59,6 +63,8 @@ export interface OcrPreview {
     };
   };
   ocr: { rawText: string };
+  rawCodeValue?: string;
+  bodbodyReport?: BodbodyReportSnapshot;
 }
 
 /** Dados retornados por GET /report?key= (apenas composição corporal) */
@@ -90,10 +96,28 @@ export interface ClientDashboard {
   chartData: ChartPoint[];
   analysis: string;
   summary: ClientDashboardSummary;
+  bodbodyReport?: BodbodyReportSnapshot;
 }
 
 export interface Overview {
   totalClients: number;
   totalEvaluations: number;
   recentEvaluations: Evaluation[];
+}
+
+export interface CompanySettings {
+  name: string;
+  address: string;
+  phone: string;
+  /** Caminho relativo no armazenamento local (ex.: company/logo.png) */
+  logoPath?: string;
+  /** Data URI da logo para embutir no PDF/HTML */
+  logoDataUri?: string;
+}
+
+export interface CompanySettingsInput {
+  name: string;
+  address: string;
+  phone: string;
+  logoPath?: string | null;
 }

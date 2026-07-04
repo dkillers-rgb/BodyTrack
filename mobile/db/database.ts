@@ -38,6 +38,30 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
       ON evaluations(client_id, exam_date);
   `);
 
+  try {
+    await db.execAsync(`ALTER TABLE evaluations ADD COLUMN raw_report_json TEXT`);
+  } catch {
+    /* coluna já existe */
+  }
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS company_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      name TEXT NOT NULL DEFAULT '',
+      address TEXT NOT NULL DEFAULT '',
+      phone TEXT NOT NULL DEFAULT '',
+      logo_path TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  const companyRow = await db.getFirstAsync<{ id: number }>('SELECT id FROM company_settings WHERE id = 1');
+  if (!companyRow) {
+    await db.runAsync(
+      `INSERT INTO company_settings (id, name, address, phone) VALUES (1, '', '', '')`
+    );
+  }
+
   return db;
 }
 

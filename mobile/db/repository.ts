@@ -1,10 +1,13 @@
 import { getDatabase } from './database';
 import { generateLocalAnalysis } from '../services/analysisService';
+import { buildBodbodyReportFromEvaluation } from '../services/bodbodyReportMapper';
 import type {
   Client,
   ClientDetail,
   ClientDashboard,
   ClientInput,
+  CompanySettings,
+  CompanySettingsInput,
   Evaluation,
   EvaluationInput,
   Overview,
@@ -28,6 +31,7 @@ type EvaluationRow = {
   image_path: string | null;
   raw_ocr_text: string | null;
   ai_analysis: string | null;
+  raw_report_json: string | null;
 };
 
 function mapClient(row: ClientRow): Client {
@@ -50,6 +54,7 @@ function mapEvaluation(row: EvaluationRow, client?: Client): Evaluation {
     bodyFat: row.body_fat,
     imagePath: row.image_path || undefined,
     rawOcrText: row.raw_ocr_text || undefined,
+    rawReportJson: row.raw_report_json || undefined,
     aiAnalysis: row.ai_analysis || undefined,
     client,
   };
@@ -152,8 +157,8 @@ export const evaluationsRepo = {
 
     await db.runAsync(
       `INSERT INTO evaluations
-        (id, client_id, exam_date, weight, skeletal_muscle, body_fat, image_path, raw_ocr_text)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, client_id, exam_date, weight, skeletal_muscle, body_fat, image_path, raw_ocr_text, raw_report_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         data.clientId,
@@ -163,6 +168,7 @@ export const evaluationsRepo = {
         data.bodyFat,
         data.imagePath || null,
         data.rawOcrText || null,
+        data.rawReportJson || null,
       ]
     );
 
@@ -174,6 +180,59 @@ export const evaluationsRepo = {
     );
     if (!row) throw new Error('Falha ao salvar avaliação');
     return mapEvaluation(row, mapClient(client));
+  },
+};
+
+type CompanyRow = {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  logo_path: string | null;
+};
+
+function mapCompany(row: CompanyRow): CompanySettings {
+  return {
+    name: row.name ?? '',
+    address: row.address ?? '',
+    phone: row.phone ?? '',
+    logoPath: row.logo_path || undefined,
+  };
+}
+
+export const companyRepo = {
+  async get(): Promise<CompanySettings> {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<CompanyRow>('SELECT * FROM company_settings WHERE id = 1');
+    if (!row) {
+      return { name: '', address: '', phone: '' };
+    }
+    return mapCompany(row);
+  },
+
+  async save(data: CompanySettingsInput): Promise<CompanySettings> {
+    const db = await getDatabase();
+    const now = new Date().toISOString();
+    const logoPath =
+      data.logoPath === null ? null : data.logoPath !== undefined ? data.logoPath : undefined;
+
+    if (logoPath === undefined) {
+      await db.runAsync(
+        `UPDATE company_settings
+         SET name = ?, address = ?, phone = ?, updated_at = ?
+         WHERE id = 1`,
+        [data.name.trim(), data.address.trim(), data.phone.trim(), now]
+      );
+    } else {
+      await db.runAsync(
+        `UPDATE company_settings
+         SET name = ?, address = ?, phone = ?, logo_path = ?, updated_at = ?
+         WHERE id = 1`,
+        [data.name.trim(), data.address.trim(), data.phone.trim(), logoPath, now]
+      );
+    }
+
+    return companyRepo.get();
   },
 };
 
@@ -233,6 +292,20 @@ export const reportsRepo = {
         }))
       );
 
+    const bodbodyReport = latest
+      ? buildBodbodyReportFromEvaluation(
+          {
+            id: detail.id,
+            name: detail.name,
+            gender: detail.gender,
+            age: detail.age,
+            height: detail.height,
+          },
+          latest,
+          latest.rawReportJson
+        )
+      : undefined;
+
     return {
       client: {
         id: detail.id,
@@ -244,6 +317,7 @@ export const reportsRepo = {
       evaluations: detail.evaluations,
       chartData,
       analysis,
+      bodbodyReport,
       summary: {
         totalEvaluations: detail.evaluations.length,
         latestWeight: latest?.weight,

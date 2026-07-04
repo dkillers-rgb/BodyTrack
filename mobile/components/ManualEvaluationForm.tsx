@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api, Client } from '../services/api';
+import { getScanDraft, clearScanDraft } from '../services/scanDraft';
 import { ClientAutocomplete } from './ClientAutocomplete';
 
 export interface EvaluationFormValues {
@@ -93,6 +94,11 @@ export function ManualEvaluationForm({
 
     setSaving(true);
     try {
+      const draft = getScanDraft();
+      const rawReportJson = draft?.bodbodyReport
+        ? JSON.stringify(draft.bodbodyReport)
+        : draft?.rawCodeValue;
+
       const result = await api.evaluations.create({
         clientId: selectedClientId,
         examDate: new Date(`${form.examDate}T12:00:00`).toISOString(),
@@ -101,7 +107,9 @@ export function ManualEvaluationForm({
         bodyFat,
         imagePath,
         rawOcrText,
+        rawReportJson,
       });
+      clearScanDraft();
       onSaved?.(result.clientId);
     } finally {
       setSaving(false);

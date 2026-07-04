@@ -1,6 +1,7 @@
 import { API_BASE_URL } from './config';
 import { extractReportKey } from './reportKeyUtils';
 import { fetchTcyReportDirect } from './tcyReportMapper';
+import { setScanDraft } from './scanDraft';
 import type { OcrPreview, ReportData } from './types';
 
 const FETCH_TIMEOUT_MS = 20000;
@@ -10,25 +11,27 @@ async function fetchReportViaBodytrackApi(key: string): Promise<ReportData> {
   const url = `${API_BASE_URL}/report?key=${encodeURIComponent(key)}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
   try {
     const response = await fetch(url, { signal: controller.signal });
     const body = (await response.json().catch(() => ({}))) as ReportData & { error?: string };
-
-    if (!response.ok) {
-      throw new Error(body.error || `Falha ao buscar relatório (${response.status})`);
-    }
-
+    if (!response.ok) throw new Error(body.error || `Falha ao buscar relatório (${response.status})`);
     return body;
   } finally {
     clearTimeout(timer);
   }
 }
 
-export function reportDataToPreview(data: ReportData): OcrPreview {
+export function reportDataToPreview(
+  data: ReportData,
+  extras?: { rawCodeValue?: string; bodbodyReport?: import('./bodbodyReportTypes').BodbodyReportSnapshot }
+): OcrPreview {
+  const examDate = extras?.bodbodyReport?.examDate
+    ? `${extras.bodbodyReport.examDate}T12:00:00`
+    : undefined;
+
   return {
     preview: {
-      patient: {},
+      patient: { examDate },
       muscleFat: {
         weight: data.peso,
         skeletalMuscle: data.massaMuscularEsqueletica,
@@ -43,10 +46,11 @@ export function reportDataToPreview(data: ReportData): OcrPreview {
         `Gordura corporal: ${data.gorduraCorporal} kg`,
       ].join('\n'),
     },
+    rawCodeValue: extras?.rawCodeValue,
+    bodbodyReport: extras?.bodbodyReport,
   };
 }
 
-/** Lê QR TCY → extrai key → busca dados no equipamento. */
 export async function processQrCodeUrl(qrUrl: string): Promise<OcrPreview> {
   const key = extractReportKey(qrUrl);
   if (!key) {
@@ -55,17 +59,24 @@ export async function processQrCodeUrl(qrUrl: string): Promise<OcrPreview> {
     );
   }
 
-  let report: ReportData;
-
   if (USE_DIRECT_TCY) {
-    report = await fetchTcyReportDirect(key);
-  } else {
-    try {
-      report = await fetchReportViaBodytrackApi(key);
-    } catch {
-      report = await fetchTcyReportDirect(key);
-    }
+    const full = await fetchTcyReportDirect(key);
+    setScanDraft({ rawCodeValue: full.rawCodeValue, bodbodyReport: full.bodbodyReport });
+    return reportDataToPreview(full, {
+      rawCodeValue: full.rawCodeValue,
+      bodbodyReport: full.bodbodyReport,
+    });
   }
 
-  return reportDataToPreview(report);
+  try {
+    const report = await fetchReportViaBodytrackApi(key);
+    return reportDataToPreview(report);
+  } catch {
+    const full = await fetchTcyReportDirect(key);
+    setScanDraft({ rawCodeValue: full.rawCodeValue, bodbodyReport: full.bodbodyReport });
+    return reportDataToPreview(full, {
+      rawCodeValue: full.rawCodeValue,
+      bodbodyReport: full.bodbodyReport,
+    });
+  }
 }

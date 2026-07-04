@@ -30,6 +30,7 @@ export default function HomeScreen() {
     { title: 'Relatórios', icon: '📈', route: '/reports' },
     { title: 'Histórico', icon: '📋', route: '/history' },
     { title: 'Clientes', icon: '👥', route: '/clients' },
+    { title: 'Empresa', icon: '🏢', route: '/company' },
   ];
 
   const handleExit = () => {

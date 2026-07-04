@@ -1,5 +1,5 @@
-import { clientsRepo, evaluationsRepo, reportsRepo } from '../db/repository';
-import { saveFromUri } from './fileStorage';
+import { clientsRepo, companyRepo, evaluationsRepo, reportsRepo } from '../db/repository';
+import { saveCompanyLogo, saveFromUri } from './fileStorage';
 import { processReportFile, toOcrPreview } from './ocrService';
 import { processQrCodeUrl } from './reportApiService';
 import type {
@@ -7,6 +7,8 @@ import type {
   ClientDashboard,
   ClientDetail,
   ClientInput,
+  CompanySettings,
+  CompanySettingsInput,
   Evaluation,
   EvaluationInput,
   OcrPreview,
@@ -19,6 +21,8 @@ export type {
   ClientDashboard,
   ClientDetail,
   ClientInput,
+  CompanySettings,
+  CompanySettingsInput,
   Evaluation,
   EvaluationInput,
   OcrPreview,
@@ -79,5 +83,19 @@ export const api = {
   reports: {
     clientDashboard: (clientId: number) => reportsRepo.clientDashboard(clientId),
     overview: () => reportsRepo.overview(),
+  },
+  company: {
+    get: () => companyRepo.get(),
+    save: (data: CompanySettingsInput) => companyRepo.save(data),
+    saveLogo: async (uri: string, mimeType?: string, fileName?: string): Promise<CompanySettings> => {
+      const logoPath = await saveCompanyLogo(uri, mimeType, fileName);
+      const current = await companyRepo.get();
+      return companyRepo.save({
+        name: current.name,
+        address: current.address,
+        phone: current.phone,
+        logoPath,
+      });
+    },
   },
 };
