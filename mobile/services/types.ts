@@ -6,17 +6,22 @@ export interface User {
 
 export interface Client {
   id: number;
+  /** ID informado manualmente pelo usuário */
+  externalId: string;
   name: string;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   age: number;
   height: number;
+  phone?: string;
 }
 
 export interface ClientInput {
+  externalId: string;
   name: string;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   age: number;
   height: number;
+  phone?: string;
 }
 
 export interface ClientDetail extends Client {
@@ -30,6 +35,7 @@ export interface Evaluation {
   weight: number;
   skeletalMuscle: number;
   bodyFat: number;
+  visceralFat?: number;
   imagePath?: string;
   aiAnalysis?: string;
   rawOcrText?: string;
@@ -43,6 +49,7 @@ export interface EvaluationInput {
   weight: number;
   skeletalMuscle: number;
   bodyFat: number;
+  visceralFat?: number;
   imagePath?: string;
   rawOcrText?: string;
   rawReportJson?: string;
@@ -60,6 +67,7 @@ export interface OcrPreview {
       weight?: number;
       skeletalMuscle?: number;
       bodyFat?: number;
+      visceralFat?: number;
     };
   };
   ocr: { rawText: string };
@@ -72,6 +80,7 @@ export interface ReportData {
   peso: number;
   massaMuscularEsqueletica: number;
   gorduraCorporal: number;
+  gorduraVisceral?: number;
 }
 
 export interface ChartPoint {

@@ -43,7 +43,11 @@ export function ClientAutocomplete({
   const filtered = useMemo(() => {
     const q = normalizeSearch(query);
     if (!q) return clients;
-    return clients.filter((client) => normalizeSearch(client.name).includes(q));
+    return clients.filter(
+      (client) =>
+        normalizeSearch(client.name).includes(q) ||
+        normalizeSearch(client.externalId).includes(q)
+    );
   }, [clients, query]);
 
   const handleSelect = (client: Client) => {
@@ -68,7 +72,7 @@ export function ClientAutocomplete({
         <View style={styles.optionTextWrap}>
           <Text style={[styles.optionName, isSelected && styles.optionNameSelected]}>{item.name}</Text>
           <Text style={styles.optionMeta}>
-            {item.age} anos · {item.height} cm
+            ID {item.externalId} · {item.age} anos · {item.height} cm
           </Text>
         </View>
         {isSelected && <Text style={styles.checkmark}>✓</Text>}
@@ -92,7 +96,7 @@ export function ClientAutocomplete({
               <>
                 <Text style={styles.triggerName}>{selected.name}</Text>
                 <Text style={styles.triggerMeta}>
-                  {selected.age} anos · {selected.height} cm
+                  ID {selected.externalId} · {selected.age} anos · {selected.height} cm
                 </Text>
               </>
             ) : (

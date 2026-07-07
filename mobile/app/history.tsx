@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, Evaluation } from '../services/api';
+import BottomNavigation from '../components/home/BottomNavigation';
 
 export default function HistoryScreen() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
@@ -12,41 +13,47 @@ export default function HistoryScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={evaluations}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => item.clientId && router.push(`/client/${item.clientId}` as never)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.name}>{item.client?.name || '—'}</Text>
-            <Text style={styles.date}>
-              {new Date(item.examDate).toLocaleDateString('pt-BR')}
-            </Text>
-            <View style={styles.metrics}>
-              <Text style={styles.metric}>Peso: {item.weight} kg</Text>
-              <Text style={styles.metric}>Músculo: {item.skeletalMuscle} kg</Text>
-              <Text style={styles.metric}>Gordura: {item.bodyFat} kg</Text>
-            </View>
-            {item.aiAnalysis && (
-              <Text style={styles.analysis}>{item.aiAnalysis}</Text>
-            )}
-            <Text style={styles.tapHint}>Ver relatório completo →</Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>Nenhuma avaliação registrada</Text>
-        }
-      />
+    <View style={styles.screen}>
+      <View style={styles.container}>
+        <FlatList
+          data={evaluations}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => item.clientId && router.push(`/client/${item.clientId}` as never)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.name}>{item.client?.name || '—'}</Text>
+              <Text style={styles.date}>
+                {new Date(item.examDate).toLocaleDateString('pt-BR')}
+              </Text>
+              <View style={styles.metrics}>
+                <Text style={styles.metric}>Peso: {item.weight} kg</Text>
+                <Text style={styles.metric}>Músculo: {item.skeletalMuscle} kg</Text>
+                <Text style={styles.metric}>Gordura: {item.bodyFat} kg</Text>
+              </View>
+              {item.aiAnalysis && (
+                <Text style={styles.analysis}>{item.aiAnalysis}</Text>
+              )}
+              <Text style={styles.tapHint}>Ver relatório completo →</Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.empty}>Nenhuma avaliação registrada</Text>
+          }
+        />
+      </View>
+      <BottomNavigation />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  screen: { flex: 1, backgroundColor: '#090B10' },
+  container: { flex: 1, padding: 16, backgroundColor: '#090B10' },
+  listContent: { paddingBottom: 8 },
   card: {
     backgroundColor: '#1a2332',
     borderRadius: 12,

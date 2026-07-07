@@ -14,7 +14,7 @@ async function loadCompanyForReport(): Promise<CompanySettings> {
 
 export async function exportReportToPdf(data: ClientDashboard): Promise<void> {
   const company = await loadCompanyForReport();
-  const html = buildBodbodyReportHtml(data, company);
+  const html = buildBodbodyReportHtml(data, company, { theme: 'screen' });
   const { uri } = await Print.printToFileAsync({ html, base64: false });
 
   const slug = data.client.name
@@ -38,6 +38,6 @@ export async function exportReportToPdf(data: ClientDashboard): Promise<void> {
 
 export async function printReport(data: ClientDashboard): Promise<void> {
   const company = await loadCompanyForReport();
-  const html = buildBodbodyReportHtml(data, company);
+  const html = buildBodbodyReportHtml(data, company, { theme: 'print' });
   await Print.printAsync({ html });
 }

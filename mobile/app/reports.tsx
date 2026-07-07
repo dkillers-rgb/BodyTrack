@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, Client, Overview } from '../services/api';
+import BottomNavigation from '../components/home/BottomNavigation';
 
 function bodyFatPercent(weight: number, bodyFat: number): string {
   if (weight <= 0) return '—';
@@ -41,13 +42,14 @@ export default function ReportsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+      <View style={[styles.centered, styles.screen]}>
+        <ActivityIndicator size="large" color="#5B8EFF" />
       </View>
     );
   }
 
   return (
+    <View style={styles.screen}>
     <View style={styles.container}>
       <Text style={styles.title}>Relatórios</Text>
       <Text style={styles.subtitle}>Selecione um cliente para ver o relatório completo</Text>
@@ -115,11 +117,14 @@ export default function ReportsScreen() {
         }}
       />
     </View>
+    <BottomNavigation />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  screen: { flex: 1, backgroundColor: '#090B10' },
+  container: { flex: 1, padding: 16, backgroundColor: '#090B10' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 24, fontWeight: '700', color: '#e8edf4', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#8b9cb3', marginBottom: 20 },

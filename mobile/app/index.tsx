@@ -1,117 +1,170 @@
-import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { api, Overview } from '../services/api';
-import { exitApp } from '../utils/exitApp';
+import HomeHeader from '../components/home/HomeHeader';
+import StatisticCard from '../components/home/StatisticCard';
+import QuickActionCard from '../components/home/QuickActionCard';
+import SectionTitle from '../components/home/SectionTitle';
+import FloatingButton from '../components/home/FloatingButton';
+import BottomNavigation from '../components/home/BottomNavigation';
+import { HOME_THEME as T } from '../components/home/theme';
 
 export default function HomeScreen() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [overview, setOverview] = useState<Overview | null>(null);
 
+  const loadOverview = useCallback(() => {
+    api.reports.overview().then(setOverview).catch(console.error);
+  }, []);
+
   useEffect(() => {
-    if (user) {
-      api.reports.overview().then(setOverview).catch(console.error);
-    }
-  }, [user]);
+    if (user) loadOverview();
+  }, [user, loadOverview]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOverview();
+    }, [loadOverview])
+  );
 
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={T.primary} />
       </View>
     );
   }
 
-  const menuItems = [
-    { title: 'Ler QR Code', icon: '📷', route: '/scan' },
-    { title: 'Preencher avaliação', icon: '✏️', route: '/manual-entry', params: { showHint: '1' } },
-    { title: 'Relatórios', icon: '📈', route: '/reports' },
-    { title: 'Histórico', icon: '📋', route: '/history' },
-    { title: 'Clientes', icon: '👥', route: '/clients' },
-    { title: 'Empresa', icon: '🏢', route: '/company' },
-  ];
-
-  const handleExit = () => {
-    Alert.alert('Sair do aplicativo', 'Deseja fechar o BodyTrack?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: exitApp },
-    ]);
-  };
-
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.greeting}>Olá, {user.name}</Text>
-      <Text style={styles.offlineBadge}>Dados salvos localmente neste dispositivo</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <HomeHeader userName={user.name} />
 
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{overview?.totalClients ?? 0}</Text>
-          <Text style={styles.statLabel}>Clientes</Text>
+        <View style={styles.statsRow}>
+          <StatisticCard
+            icon="people-outline"
+            value={overview?.totalClients ?? 0}
+            label="Clientes"
+            subtitle="Cadastrados"
+            iconColor={T.primary}
+            iconBg="rgba(91,142,255,0.15)"
+          />
+          <StatisticCard
+            icon="clipboard-outline"
+            value={overview?.totalEvaluations ?? 0}
+            label="Avaliações"
+            subtitle="Realizadas"
+            iconColor={T.primary}
+            iconBg="rgba(91,142,255,0.15)"
+          />
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{overview?.totalEvaluations ?? 0}</Text>
-          <Text style={styles.statLabel}>Avaliações</Text>
-        </View>
+
+        <SectionTitle>Ações rápidas</SectionTitle>
+
+        <QuickActionCard
+          icon="qr-code-outline"
+          title="Ler QR Code"
+          subtitle="Escaneie um equipamento"
+          iconColor="#5B8EFF"
+          iconBg="rgba(91,142,255,0.15)"
+          onPress={() => router.push('/scan' as never)}
+        />
+        <QuickActionCard
+          icon="create-outline"
+          title="Nova avaliação"
+          subtitle="Registrar avaliação corporal"
+          iconColor="#31D158"
+          iconBg="rgba(49,209,88,0.15)"
+          onPress={() => router.push({ pathname: '/manual-entry', params: { showHint: '1' } } as never)}
+        />
+        <QuickActionCard
+          icon="people-outline"
+          title="Clientes"
+          subtitle="Cadastre e edite clientes"
+          iconColor="#A78BFA"
+          iconBg="rgba(167,139,250,0.15)"
+          onPress={() => router.push('/clients' as never)}
+        />
+        <QuickActionCard
+          icon="bar-chart-outline"
+          title="Relatórios"
+          subtitle="Visualize gráficos e evolução"
+          iconColor="#FB923C"
+          iconBg="rgba(251,146,60,0.15)"
+          onPress={() => router.push('/reports' as never)}
+        />
+        <QuickActionCard
+          icon="time-outline"
+          title="Histórico"
+          subtitle="Consulte avaliações anteriores"
+          iconColor="#C084FC"
+          iconBg="rgba(192,132,252,0.15)"
+          onPress={() => router.push('/history' as never)}
+        />
+        <QuickActionCard
+          icon="business-outline"
+          title="Empresa"
+          subtitle="Gerencie sua empresa"
+          iconColor="#2DD4BF"
+          iconBg="rgba(45,212,191,0.15)"
+          onPress={() => router.push('/company' as never)}
+        />
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      <View style={styles.fabArea} pointerEvents="box-none">
+        <FloatingButton
+          onPress={() => router.push({ pathname: '/manual-entry', params: { showHint: '1' } } as never)}
+        />
       </View>
 
-      {menuItems.map((item) => (
-        <TouchableOpacity
-          key={item.route}
-          style={styles.menuCard}
-          onPress={() =>
-            item.params
-              ? router.push({ pathname: item.route, params: item.params } as never)
-              : router.push(item.route as never)
-          }
-        >
-          <Text style={styles.menuIcon}>{item.icon}</Text>
-          <Text style={styles.menuTitle}>{item.title}</Text>
-        </TouchableOpacity>
-      ))}
-
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleExit}>
-        <Text style={styles.logoutText}>Sair</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <BottomNavigation />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  greeting: { fontSize: 24, fontWeight: '700', color: '#e8edf4', marginBottom: 8 },
-  offlineBadge: {
-    fontSize: 13,
-    color: '#22c55e',
-    marginBottom: 24,
-    fontWeight: '500',
-  },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statCard: {
+  screen: {
     flex: 1,
-    backgroundColor: '#1a2332',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#2d3a4f',
+    backgroundColor: T.bg,
   },
-  statValue: { fontSize: 28, fontWeight: '700', color: '#3b82f6' },
-  statLabel: { fontSize: 13, color: '#8b9cb3', marginTop: 4 },
-  menuCard: {
-    flexDirection: 'row',
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  centered: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: '#1a2332',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2d3a4f',
-    gap: 16,
+    justifyContent: 'center',
+    backgroundColor: T.bg,
   },
-  menuIcon: { fontSize: 24 },
-  menuTitle: { fontSize: 16, fontWeight: '600', color: '#e8edf4' },
-  logoutBtn: { marginTop: 24, alignItems: 'center', padding: 16 },
-  logoutText: { color: '#ef4444', fontWeight: '600' },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  bottomSpacer: { height: 100 },
+  fabArea: {
+    position: 'absolute',
+    right: 0,
+    bottom: 78,
+    left: 0,
+    height: 90,
+  },
 });

@@ -11,7 +11,28 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.bodytrack.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "O BodyTrack precisa da câmera para ler QR Codes dos relatórios de análise corporal."
+        "NSCameraUsageDescription": "O BodyTrack precisa da câmera para ler QR Codes dos relatórios de análise corporal.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "119.23.70.228": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": false
+            },
+            "bodbody.com.cn": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "bodbody.cn": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "bodbody.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "android": {
@@ -49,7 +70,8 @@
       ],
       "./plugins/withAndroidCleartextTraffic.js",
       "./plugins/withAndroidLocalBuild.js",
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ],
     "extra": {
       "storageMode": "local",

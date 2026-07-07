@@ -12,16 +12,19 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { api, Client, ClientInput } from '../services/api';
+import BottomNavigation from '../components/home/BottomNavigation';
 
-const emptyForm: ClientInput = { name: '', gender: 'MALE', age: 0, height: 0 };
+const emptyForm: ClientInput = { externalId: '', name: '', gender: 'MALE', age: 0, height: 0 };
 
 function matchesSearch(client: Client, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
 
   return (
+    client.externalId.toLowerCase().includes(q) ||
     client.id.toString().includes(q) ||
     client.name.toLowerCase().includes(q) ||
+    (client.phone?.toLowerCase().includes(q) ?? false) ||
     String(client.age).includes(q) ||
     String(client.height).includes(q)
   );
@@ -63,10 +66,12 @@ export default function ClientsScreen() {
   const openEdit = (client: Client) => {
     setEditingClient(client);
     setForm({
+      externalId: client.externalId,
       name: client.name,
       gender: client.gender,
       age: client.age,
       height: client.height,
+      phone: client.phone ?? '',
     });
     setIsCreating(false);
   };
@@ -84,6 +89,10 @@ export default function ClientsScreen() {
   };
 
   const handleSave = async () => {
+    if (!form.externalId.trim()) {
+      Alert.alert('Erro', 'Informe o ID do cliente.');
+      return;
+    }
     if (!form.name.trim()) {
       Alert.alert('Erro', 'Informe o nome do cliente.');
       return;
@@ -124,6 +133,7 @@ export default function ClientsScreen() {
   };
 
   return (
+    <View style={styles.screen}>
     <View style={styles.container}>
       <TouchableOpacity style={styles.newClientBtn} onPress={openCreate}>
         <Text style={styles.newClientBtnText}>+ Cadastrar cliente</Text>
@@ -145,9 +155,10 @@ export default function ClientsScreen() {
               onPress={() => router.push(`/client/${item.id}` as never)}
             >
               <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.id}>ID: {item.id}</Text>
+              <Text style={styles.id}>ID: {item.externalId}</Text>
               <Text style={styles.info}>
                 {item.age} anos · {item.height} cm
+                {item.phone ? ` · ${item.phone}` : ''}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
@@ -169,6 +180,16 @@ export default function ClientsScreen() {
           <View style={styles.modalContent}>
             <ScrollView>
               <Text style={styles.modalTitle}>{editingClient ? 'Editar cliente' : 'Cadastrar cliente'}</Text>
+
+              <Text style={styles.label}>ID *</Text>
+              <TextInput
+                style={styles.input}
+                value={form.externalId}
+                onChangeText={(externalId) => setForm({ ...form, externalId })}
+                placeholder="Ex.: 164"
+                placeholderTextColor="#8b9cb3"
+                autoCapitalize="characters"
+              />
 
               <Text style={styles.label}>Nome</Text>
               <TextInput
@@ -208,6 +229,16 @@ export default function ClientsScreen() {
                 keyboardType="decimal-pad"
               />
 
+              <Text style={styles.label}>Telefone (opcional)</Text>
+              <TextInput
+                style={styles.input}
+                value={form.phone ?? ''}
+                onChangeText={(phone) => setForm({ ...form, phone })}
+                keyboardType="phone-pad"
+                placeholder="Ex.: (18) 99999-9999"
+                placeholderTextColor="#8b9cb3"
+              />
+
               <TouchableOpacity
                 style={[styles.saveBtn, saving && styles.btnDisabled]}
                 onPress={handleSave}
@@ -223,11 +254,14 @@ export default function ClientsScreen() {
         </View>
       </Modal>
     </View>
+    <BottomNavigation />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  screen: { flex: 1, backgroundColor: '#090B10' },
+  container: { flex: 1, padding: 16, backgroundColor: '#090B10' },
   search: {
     backgroundColor: '#1a2332',
     borderWidth: 1,

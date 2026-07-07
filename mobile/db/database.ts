@@ -16,6 +16,8 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
       gender TEXT NOT NULL CHECK(gender IN ('MALE', 'FEMALE', 'OTHER')),
       age INTEGER NOT NULL,
       height REAL NOT NULL,
+      phone TEXT,
+      external_id TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -27,6 +29,7 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
       weight REAL NOT NULL,
       skeletal_muscle REAL NOT NULL,
       body_fat REAL NOT NULL,
+      visceral_fat REAL,
       image_path TEXT,
       raw_ocr_text TEXT,
       ai_analysis TEXT,
@@ -42,6 +45,32 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync(`ALTER TABLE evaluations ADD COLUMN raw_report_json TEXT`);
   } catch {
     /* coluna já existe */
+  }
+
+  try {
+    await db.execAsync(`ALTER TABLE clients ADD COLUMN phone TEXT`);
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execAsync(`ALTER TABLE evaluations ADD COLUMN visceral_fat REAL`);
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execAsync(`ALTER TABLE clients ADD COLUMN external_id TEXT`);
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execAsync(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_external_id ON clients(external_id) WHERE external_id IS NOT NULL AND TRIM(external_id) != ''`
+    );
+  } catch {
+    /* índice indisponível (ex.: IDs duplicados já existentes) */
   }
 
   await db.execAsync(`

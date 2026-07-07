@@ -36,6 +36,7 @@ export function reportDataToPreview(
         weight: data.peso,
         skeletalMuscle: data.massaMuscularEsqueletica,
         bodyFat: data.gorduraCorporal,
+        visceralFat: data.gorduraVisceral,
       },
     },
     ocr: {
@@ -44,6 +45,7 @@ export function reportDataToPreview(
         `Peso: ${data.peso} kg`,
         `Massa muscular esquelética: ${data.massaMuscularEsqueletica} kg`,
         `Gordura corporal: ${data.gorduraCorporal} kg`,
+        ...(data.gorduraVisceral != null ? [`Gordura visceral: ${data.gorduraVisceral}`] : []),
       ].join('\n'),
     },
     rawCodeValue: extras?.rawCodeValue,

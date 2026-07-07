@@ -5,6 +5,7 @@ export interface TcyMetrics {
   peso: number;
   massaMuscularEsqueletica: number;
   gorduraCorporal: number;
+  gorduraVisceral?: number;
 }
 
 export interface TcyFullReport extends TcyMetrics {
@@ -32,10 +33,16 @@ function mapMetrics(codeValue: unknown): TcyMetrics {
   const peso = toNumber(values[18]);
   const massaMuscularEsqueletica = toNumber(values[21]);
   const gorduraCorporal = toNumber(values[15]);
+  const gorduraVisceral = toNumber(values[37]);
   if (peso == null || massaMuscularEsqueletica == null || gorduraCorporal == null) {
     throw new Error('Relatório incompleto: peso, massa muscular ou gordura não encontrados');
   }
-  return { peso, massaMuscularEsqueletica, gorduraCorporal };
+  return {
+    peso,
+    massaMuscularEsqueletica,
+    gorduraCorporal,
+    ...(gorduraVisceral != null ? { gorduraVisceral } : {}),
+  };
 }
 
 export async function fetchTcyReportDirect(key: string): Promise<TcyFullReport> {

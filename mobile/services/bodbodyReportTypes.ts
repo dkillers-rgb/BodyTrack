@@ -26,6 +26,7 @@ export interface BodbodyReportSnapshot {
     weight: RangeValue;
     skeletalMuscle: RangeValue;
     bodyFat: RangeValue;
+    visceralFat: RangeValue;
   };
   section3: {
     bmi: RangeValue;

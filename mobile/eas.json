@@ -12,6 +12,10 @@
       "android": {
         "buildType": "apk",
         "image": "latest"
+      },
+      "ios": {
+        "distribution": "store",
+        "image": "latest"
       }
     },
     "preview": {
@@ -22,6 +26,21 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
+        "image": "latest"
+      },
+      "ios": {
+        "distribution": "internal",
+        "image": "latest"
+      }
+    },
+    "altstore": {
+      "node": "20.18.0",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "distribution": "internal",
+      "ios": {
+        "distribution": "internal",
         "image": "latest"
       }
     }

@@ -40,8 +40,24 @@ const I = {
   WEIGHT_CONTROL: 49,
   BMR: 52,
   HEALTH_SCORE: 53,
+  VISCERAL_FAT_INDEX: 37,
   EXAM_DATETIME: 5,
 } as const;
+
+const VISCERAL_LOW = 5;
+const VISCERAL_HIGH = 9;
+
+function visceralFatRv(value: number) {
+  return rv(value, VISCERAL_LOW, VISCERAL_HIGH);
+}
+
+function ensureSection2VisceralFat(
+  section2: BodbodyReportSnapshot['section2'],
+  fallback = 0
+): BodbodyReportSnapshot['section2'] {
+  if (section2.visceralFat) return section2;
+  return { ...section2, visceralFat: visceralFatRv(fallback) };
+}
 
 function toNumber(value: unknown): number | undefined {
   const n = parseFloat(String(value ?? '').replace(',', '.'));
@@ -103,13 +119,18 @@ export function normalizeBodbodyReport(raw: unknown): BodbodyReportSnapshot | nu
     const s4 = snapshot.section4;
     const section5 = translateSection5(snapshot.section5);
     if ('musclePercent' in s4.leftArm) {
-      return { ...snapshot, section5 };
+      return {
+        ...snapshot,
+        section2: ensureSection2VisceralFat(snapshot.section2),
+        section5,
+      };
     }
     const sm = snapshot.section2.skeletalMuscle.value;
     const fixSeg = (part: { muscle: number; fat: number }, segment: SegmentKey): SegmentPart =>
       segPart(part.muscle, part.fat, sm, segment);
     return {
       ...snapshot,
+      section2: ensureSection2VisceralFat(snapshot.section2),
       section4: {
         leftArm: fixSeg(s4.leftArm, 'leftArm'),
         rightArm: fixSeg(s4.rightArm, 'rightArm'),
@@ -144,6 +165,7 @@ export function normalizeBodbodyReport(raw: unknown): BodbodyReportSnapshot | nu
 
     return {
       ...(r as BodbodyReportSnapshot),
+      section2: ensureSection2VisceralFat((r.section2 as BodbodyReportSnapshot['section2'])),
       section3: {
         bmi: (r.section3 as BodbodyReportSnapshot['section3']).bmi,
         bodyFatPct: (r.section3 as BodbodyReportSnapshot['section3']).bodyFatPct,
@@ -211,6 +233,7 @@ export function mapCodeValueToBodbodyReport(codeValue: unknown): BodbodyReportSn
   const weight = toNumber(v[I.WEIGHT]) ?? 0;
   const skeletalMuscle = toNumber(v[I.SKELETAL_MUSCLE]) ?? 0;
   const bodyFatKg = toNumber(v[I.MUSCLE_FAT_BODY_FAT]) ?? 0;
+  const visceralFat = toNumber(v[I.VISCERAL_FAT_INDEX]) ?? 0;
   const bmi = toNumber(v[I.BMI]) ?? 0;
   const bodyFatPct =
     toNumber(v[I.BODY_FAT_PCT]) ?? (weight > 0 ? (bodyFatKg / weight) * 100 : 0);
@@ -254,6 +277,7 @@ export function mapCodeValueToBodbodyReport(codeValue: unknown): BodbodyReportSn
       weight: rv(weight, wtLow, wtHigh),
       skeletalMuscle: rv(skeletalMuscle, smLow, smHigh),
       bodyFat: rv(bodyFatKg, bfLow, bfHigh),
+      visceralFat: visceralFatRv(visceralFat),
     },
     section3: {
       bmi: rv(bmi, bmiLow, bmiHigh),
@@ -290,29 +314,57 @@ export function mapCodeValueToBodbodyReport(codeValue: unknown): BodbodyReportSn
 
 export function buildBodbodyReportFromEvaluation(
   client: Client,
-  evaluation: { examDate: string; weight: number; skeletalMuscle: number; bodyFat: number },
+  evaluation: {
+    examDate: string;
+    weight: number;
+    skeletalMuscle: number;
+    bodyFat: number;
+    visceralFat?: number;
+  },
   rawReportJson?: string
 ): BodbodyReportSnapshot {
   if (rawReportJson) {
     try {
       const parsed = JSON.parse(rawReportJson) as unknown;
       const normalized = normalizeBodbodyReport(parsed);
-      if (normalized) return normalized;
+      if (normalized) {
+        return {
+          ...normalized,
+          section2: ensureSection2VisceralFat(
+            normalized.section2,
+            evaluation.visceralFat ?? normalized.section2.visceralFat?.value ?? 0
+          ),
+        };
+      }
       if (
         parsed &&
         typeof parsed === 'object' &&
         'section2' in parsed &&
         (parsed as BodbodyReportSnapshot).section2?.weight != null
       ) {
-        return parsed as BodbodyReportSnapshot;
+        const snapshot = parsed as BodbodyReportSnapshot;
+        return {
+          ...snapshot,
+          section2: ensureSection2VisceralFat(
+            snapshot.section2,
+            evaluation.visceralFat ?? snapshot.section2.visceralFat?.value ?? 0
+          ),
+        };
       }
-      return mapCodeValueToBodbodyReport(parsed);
+      const fromCode = mapCodeValueToBodbodyReport(parsed);
+      return {
+        ...fromCode,
+        section2: ensureSection2VisceralFat(
+          fromCode.section2,
+          evaluation.visceralFat ?? fromCode.section2.visceralFat.value
+        ),
+      };
     } catch {
       /* fallback */
     }
   }
 
-  const { weight, skeletalMuscle, bodyFat } = evaluation;
+  const { weight, skeletalMuscle, bodyFat, visceralFat } = evaluation;
   const ranges = defaultRanges(weight, client.height, client.gender);
   const bodyFatPct = weight > 0 ? (bodyFat / weight) * 100 : 0;
   const bmi = client.height > 0 ? weight / (client.height / 100) ** 2 : 0;
@@ -330,6 +382,7 @@ export function buildBodbodyReportFromEvaluation(
       weight: rv(weight, ranges.wtLow, ranges.wtHigh),
       skeletalMuscle: rv(skeletalMuscle, ranges.smLow, ranges.smHigh),
       bodyFat: rv(bodyFat, ranges.bfKgLow, ranges.bfKgHigh),
+      visceralFat: visceralFatRv(visceralFat ?? 0),
     },
     section3: {
       bmi: rv(bmi, 18.5, 25),

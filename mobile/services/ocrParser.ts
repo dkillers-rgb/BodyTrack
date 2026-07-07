@@ -6,6 +6,7 @@ export interface MuscleFatAnalysis {
   weight?: number;
   skeletalMuscle?: number;
   bodyFat?: number;
+  visceralFat?: number;
 }
 
 export interface OcrLine {
@@ -178,7 +179,29 @@ function parseMuscleFatAnalysis(text: string, spatialLines?: OcrLine[]): MuscleF
     mergeMuscleFat(muscleFat, extractBodyAnalyseBarValues(mainText));
   }
 
+  for (const source of mfaSources) {
+    mergeMuscleFat(muscleFat, extractVisceralFat(source));
+  }
+  mergeMuscleFat(muscleFat, extractVisceralFat(mainText));
+
   return muscleFat;
+}
+
+function extractVisceralFat(text: string): MuscleFatAnalysis {
+  const patterns = [
+    /visceral\s*fat\s*(?:level|index)?\s*[:.]?\s*(\d{1,2}(?:[.,]\d+)?)/i,
+    /gordura\s*visceral\s*[:.]?\s*(\d{1,2}(?:[.,]\d+)?)/i,
+    /VFI\s*[:.]?\s*(\d{1,2}(?:[.,]\d+)?)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (!match) continue;
+    const value = parseFloat(match[1].replace(',', '.'));
+    if (Number.isFinite(value) && value >= 1 && value <= 30) {
+      return { visceralFat: value };
+    }
+  }
+  return {};
 }
 
 /** Extrai peso, mÃºsculo esquelÃ©tico e gordura corporal da seÃ§Ã£o 2 pelo valor antes da faixa normal. */
@@ -273,7 +296,11 @@ function valueConflictsWithContext(value: number, context: string): boolean {
   return false;
 }
 
-function isPlausibleMfaValue(field: (typeof MFA_ROW_DEFS)[number]['field'], value: number): boolean {
+function isPlausibleMfaValue(
+  field: keyof MuscleFatAnalysis,
+  value: number
+): boolean {
+  if (field === 'visceralFat') return value >= 1 && value <= 30;
   if (field === 'skeletalMuscle' && value > 40) return false;
   if (field === 'bodyFat' && value > 45) return false;
   if (field === 'weight' && value < 25) return false;
@@ -396,7 +423,7 @@ function parseOcrBarValue(raw: string | undefined, min: number, max: number): nu
 }
 
 function mergeMuscleFat(target: MuscleFatAnalysis, source: MuscleFatAnalysis): void {
-  for (const field of ['weight', 'skeletalMuscle', 'bodyFat'] as const) {
+  for (const field of ['weight', 'skeletalMuscle', 'bodyFat', 'visceralFat'] as const) {
     const value = source[field];
     if (!target[field] && value !== undefined && isPlausibleMfaValue(field, value)) {
       target[field] = value;

@@ -54,7 +54,7 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
   );
 }
 
-function MuscleFatBar({ item, unit }: { item: RangeValue; unit: string }) {
+function MuscleFatBar({ item, unit, decimals = 1 }: { item: RangeValue; unit: string; decimals?: number }) {
   const pos = zonePosition(item, item.low * 0.75, item.high * 1.25);
   return (
     <View style={styles.mfRow}>
@@ -65,7 +65,8 @@ function MuscleFatBar({ item, unit }: { item: RangeValue; unit: string }) {
         <View style={[styles.mfMarker, { left: `${pos}%` }]} />
       </View>
       <Text style={styles.mfValue}>
-        {fmt(item.value)} {unit}
+        {fmt(item.value, decimals)}
+        {unit ? ` ${unit}` : ''}
       </Text>
     </View>
   );
@@ -235,7 +236,7 @@ export default function BodbodyReport({ data }: Props) {
       </View>
 
       <View style={styles.patientBar}>
-        <Text style={styles.patientText}>ID {client.id}</Text>
+        <Text style={styles.patientText}>ID {client.externalId}</Text>
         <Text style={styles.patientText}>{client.name}</Text>
         <Text style={styles.patientText}>{formatGender(client.gender)}</Text>
         <Text style={styles.patientText}>{client.age} anos</Text>
@@ -258,6 +259,13 @@ export default function BodbodyReport({ data }: Props) {
         <BarRow label={REPORT_LABELS.weight} item={r.section2.weight} unit="kg" bar="muscle" />
         <BarRow label={REPORT_LABELS.skeletalMuscle} item={r.section2.skeletalMuscle} unit="kg" bar="muscle" />
         <BarRow label={REPORT_LABELS.bodyFat} item={r.section2.bodyFat} unit="kg" bar="muscle" />
+        <BarRow
+          label={REPORT_LABELS.visceralFat}
+          item={r.section2.visceralFat}
+          unit=""
+          bar="muscle"
+          decimals={0}
+        />
       </View>
 
       <View style={styles.card}>
@@ -344,7 +352,7 @@ function BarRow({
     <View style={styles.barRow}>
       <Text style={styles.barLabel}>{label}</Text>
       {bar === 'muscle' ? (
-        <MuscleFatBar item={item} unit={unit} />
+        <MuscleFatBar item={item} unit={unit} decimals={decimals} />
       ) : (
         <GaugeBar item={item} unit={unit} decimals={decimals} />
       )}

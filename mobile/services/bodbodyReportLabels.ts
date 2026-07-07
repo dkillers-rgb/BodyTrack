@@ -10,6 +10,7 @@ export const REPORT_LABELS = {
   section2: 'Análise de Músculo e Gordura',
   weight: 'Peso',
   skeletalMuscle: 'Músculo Esquelético',
+  visceralFat: 'Gordura Visceral',
   section3: 'Análise de Sobrepeso',
   bmi: 'IMC',
   bodyFatPct: 'Percentual de Gordura',

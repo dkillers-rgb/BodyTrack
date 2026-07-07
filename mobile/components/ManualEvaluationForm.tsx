@@ -20,6 +20,7 @@ export interface EvaluationFormValues {
   weight: string;
   skeletalMuscle: string;
   bodyFat: string;
+  visceralFat: string;
 }
 
 interface ManualEvaluationFormProps {
@@ -53,6 +54,7 @@ export function ManualEvaluationForm({
     weight: initialValues?.weight || '',
     skeletalMuscle: initialValues?.skeletalMuscle || '',
     bodyFat: initialValues?.bodyFat || '',
+    visceralFat: initialValues?.visceralFat || '',
   });
 
   const loadClients = useCallback(() => {
@@ -91,6 +93,8 @@ export function ManualEvaluationForm({
     const weight = parseFloat(form.weight.replace(',', '.'));
     const skeletalMuscle = parseFloat(form.skeletalMuscle.replace(',', '.')) || 0;
     const bodyFat = parseFloat(form.bodyFat.replace(',', '.')) || 0;
+    const visceralParsed = parseFloat(form.visceralFat.replace(',', '.'));
+    const visceralFat = Number.isFinite(visceralParsed) ? visceralParsed : undefined;
 
     setSaving(true);
     try {
@@ -105,6 +109,10 @@ export function ManualEvaluationForm({
         weight,
         skeletalMuscle,
         bodyFat,
+        visceralFat:
+          visceralFat ??
+          draft?.bodbodyReport?.section2.visceralFat?.value ??
+          undefined,
         imagePath,
         rawOcrText,
         rawReportJson,
@@ -136,8 +144,8 @@ export function ManualEvaluationForm({
       >
         {showHint && (
           <Text style={styles.hint}>
-            Preencha os dados da seção Muscle Fat Analysis (peso, músculo esquelético e gordura
-            corporal).
+            Preencha os dados da seção Muscle Fat Analysis (peso, músculo esquelético, gordura
+            corporal e gordura visceral).
           </Text>
         )}
 
@@ -191,6 +199,17 @@ export function ManualEvaluationForm({
             onChangeText={(bodyFat) => setForm((prev) => ({ ...prev, bodyFat }))}
             keyboardType="decimal-pad"
             placeholder="Ex: 15.8"
+            placeholderTextColor="#64748b"
+            editable={!saving}
+          />
+
+          <Text style={styles.fieldLabel}>Gordura visceral (índice, opcional)</Text>
+          <TextInput
+            style={styles.input}
+            value={form.visceralFat}
+            onChangeText={(visceralFat) => setForm((prev) => ({ ...prev, visceralFat }))}
+            keyboardType="number-pad"
+            placeholder="Ex: 10"
             placeholderTextColor="#64748b"
             editable={!saving}
           />

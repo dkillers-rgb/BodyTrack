@@ -19,6 +19,8 @@ type ClientRow = {
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   age: number;
   height: number;
+  phone: string | null;
+  external_id: string | null;
 };
 
 type EvaluationRow = {
@@ -28,6 +30,7 @@ type EvaluationRow = {
   weight: number;
   skeletal_muscle: number;
   body_fat: number;
+  visceral_fat: number | null;
   image_path: string | null;
   raw_ocr_text: string | null;
   ai_analysis: string | null;
@@ -37,11 +40,48 @@ type EvaluationRow = {
 function mapClient(row: ClientRow): Client {
   return {
     id: row.id,
+    externalId: row.external_id?.trim() || String(row.id),
     name: row.name,
     gender: row.gender,
     age: row.age,
     height: row.height,
+    phone: row.phone?.trim() || undefined,
   };
+}
+
+function normalizeExternalId(externalId: string): string {
+  return externalId.trim();
+}
+
+async function assertExternalIdUnique(
+  db: Awaited<ReturnType<typeof getDatabase>>,
+  externalId: string,
+  excludeClientId?: number
+): Promise<void> {
+  const normalized = normalizeExternalId(externalId).toLowerCase();
+  const params: (string | number)[] = [normalized, externalId];
+  let sql = `
+    SELECT id FROM clients
+    WHERE (
+      (external_id IS NOT NULL AND TRIM(external_id) != '' AND LOWER(TRIM(external_id)) = ?)
+      OR ((external_id IS NULL OR TRIM(external_id) = '') AND CAST(id AS TEXT) = ?)
+    )
+  `;
+
+  if (excludeClientId != null) {
+    sql += ' AND id != ?';
+    params.push(excludeClientId);
+  }
+
+  const existing = await db.getFirstAsync<{ id: number }>(sql, params);
+  if (existing) {
+    throw new Error('Já existe um cliente com este ID.');
+  }
+}
+
+function normalizePhone(phone?: string): string | null {
+  const trimmed = phone?.trim();
+  return trimmed ? trimmed : null;
 }
 
 function mapEvaluation(row: EvaluationRow, client?: Client): Evaluation {
@@ -52,6 +92,7 @@ function mapEvaluation(row: EvaluationRow, client?: Client): Evaluation {
     weight: row.weight,
     skeletalMuscle: row.skeletal_muscle,
     bodyFat: row.body_fat,
+    visceralFat: row.visceral_fat ?? undefined,
     imagePath: row.image_path || undefined,
     rawOcrText: row.raw_ocr_text || undefined,
     rawReportJson: row.raw_report_json || undefined,
@@ -111,12 +152,17 @@ export const clientsRepo = {
   },
 
   async create(data: ClientInput): Promise<Client> {
+    const externalId = normalizeExternalId(data.externalId);
+    if (!externalId) throw new Error('Informe o ID do cliente.');
+
     const db = await getDatabase();
+    await assertExternalIdUnique(db, externalId);
+
     const now = new Date().toISOString();
     const result = await db.runAsync(
-      `INSERT INTO clients (name, gender, age, height, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [data.name.trim(), data.gender, data.age, data.height, now, now]
+      `INSERT INTO clients (external_id, name, gender, age, height, phone, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [externalId, data.name.trim(), data.gender, data.age, data.height, normalizePhone(data.phone), now, now]
     );
 
     const id = result.lastInsertRowId;
@@ -126,11 +172,16 @@ export const clientsRepo = {
   },
 
   async update(id: number, data: ClientInput): Promise<Client> {
+    const externalId = normalizeExternalId(data.externalId);
+    if (!externalId) throw new Error('Informe o ID do cliente.');
+
     const db = await getDatabase();
+    await assertExternalIdUnique(db, externalId, id);
+
     const now = new Date().toISOString();
     await db.runAsync(
-      `UPDATE clients SET name = ?, gender = ?, age = ?, height = ?, updated_at = ? WHERE id = ?`,
-      [data.name.trim(), data.gender, data.age, data.height, now, id]
+      `UPDATE clients SET external_id = ?, name = ?, gender = ?, age = ?, height = ?, phone = ?, updated_at = ? WHERE id = ?`,
+      [externalId, data.name.trim(), data.gender, data.age, data.height, normalizePhone(data.phone), now, id]
     );
 
     const row = await db.getFirstAsync<ClientRow>('SELECT * FROM clients WHERE id = ?', [id]);
@@ -157,8 +208,8 @@ export const evaluationsRepo = {
 
     await db.runAsync(
       `INSERT INTO evaluations
-        (id, client_id, exam_date, weight, skeletal_muscle, body_fat, image_path, raw_ocr_text, raw_report_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, client_id, exam_date, weight, skeletal_muscle, body_fat, visceral_fat, image_path, raw_ocr_text, raw_report_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         data.clientId,
@@ -166,6 +217,7 @@ export const evaluationsRepo = {
         data.weight,
         data.skeletalMuscle,
         data.bodyFat,
+        data.visceralFat ?? null,
         data.imagePath || null,
         data.rawOcrText || null,
         data.rawReportJson || null,
@@ -309,10 +361,12 @@ export const reportsRepo = {
     return {
       client: {
         id: detail.id,
+        externalId: detail.externalId,
         name: detail.name,
         gender: detail.gender,
         age: detail.age,
         height: detail.height,
+        phone: detail.phone,
       },
       evaluations: detail.evaluations,
       chartData,

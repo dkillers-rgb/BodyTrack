@@ -21,10 +21,11 @@ export function navigateToManualEntry(
 
   if (preview) {
     params.examDate = toDateInputValue(preview.preview.patient.examDate);
-    const { weight, skeletalMuscle, bodyFat } = preview.preview.muscleFat;
+    const { weight, skeletalMuscle, bodyFat, visceralFat } = preview.preview.muscleFat;
     if (weight != null) params.weight = String(weight);
     if (skeletalMuscle != null) params.skeletalMuscle = String(skeletalMuscle);
     if (bodyFat != null) params.bodyFat = String(bodyFat);
+    if (visceralFat != null) params.visceralFat = String(visceralFat);
     if (preview.imagePath) params.imagePath = preview.imagePath;
     if (preview.ocr.rawText) {
       params.rawOcrText = preview.ocr.rawText.slice(0, 4000);

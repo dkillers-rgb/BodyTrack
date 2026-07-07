@@ -1,13 +1,47 @@
 import type { ClientDashboard, CompanySettings } from '../services/types';
 import type { BodbodyReportSnapshot, RangeValue } from '../services/bodbodyReportTypes';
 import { REPORT_LABELS } from '../services/bodbodyReportLabels';
-import { buildSegmentSvgMarkup, SILHOUETTE_THEME_PRINT } from '../utils/segmentBodyArt';
+import {
+  buildSegmentSvgMarkup,
+  SILHOUETTE_THEME_PRINT,
+  SILHOUETTE_THEME_SCREEN,
+} from '../utils/segmentBodyArt';
 
-const T = {
+export type ReportHtmlTheme = 'print' | 'screen';
+
+type ThemeTokens = {
+  page: string;
+  card: string;
+  border: string;
+  header: string;
+  headerTitle: string;
+  headerMeta: string;
+  gold: string;
+  title: string;
+  text: string;
+  muted: string;
+  zoneLow: string;
+  zoneNormal: string;
+  zoneOver: string;
+  gaugeLow: string;
+  gaugeMid: string;
+  gaugeHigh: string;
+  marker: string;
+  compCardBg: string;
+  chartBg: string;
+  chartGrid: string;
+  rowBorder: string;
+  cardShadow: string;
+  logoBg: string;
+};
+
+const THEME_PRINT: ThemeTokens = {
   page: '#F7F8FA',
   card: '#FFFFFF',
   border: '#D7D7D7',
   header: '#163040',
+  headerTitle: '#C7A25A',
+  headerMeta: 'rgba(255,255,255,0.78)',
   gold: '#C7A25A',
   title: '#163040',
   text: '#202124',
@@ -19,8 +53,43 @@ const T = {
   gaugeMid: '#81C784',
   gaugeHigh: '#E57373',
   marker: '#163040',
-} as const;
+  compCardBg: '#FCFCFD',
+  chartBg: '#FFFFFF',
+  chartGrid: '#ECEFF1',
+  rowBorder: '#ECEFF1',
+  cardShadow: '0 1px 2px rgba(22,48,64,0.04)',
+  logoBg: '#FFFFFF',
+};
 
+const THEME_SCREEN: ThemeTokens = {
+  page: '#0B1720',
+  card: '#12222D',
+  border: '#8D6E3C',
+  header: '#0B1720',
+  headerTitle: '#F5F5F5',
+  headerMeta: '#A8B5C4',
+  gold: '#C7A25A',
+  title: '#C7A25A',
+  text: '#F5F5F5',
+  muted: '#A8B5C4',
+  zoneLow: '#3D5A4A',
+  zoneNormal: '#4CAF6A',
+  zoneOver: '#D4A017',
+  gaugeLow: '#3B82C4',
+  gaugeMid: '#4CAF6A',
+  gaugeHigh: '#C94C4C',
+  marker: '#F5F5F5',
+  compCardBg: '#0B1720',
+  chartBg: '#12222D',
+  chartGrid: 'rgba(141,110,60,0.25)',
+  rowBorder: 'rgba(141,110,60,0.35)',
+  cardShadow: 'none',
+  logoBg: '#000000',
+};
+
+function resolveTheme(theme: ReportHtmlTheme = 'print'): ThemeTokens {
+  return theme === 'screen' ? THEME_SCREEN : THEME_PRINT;
+}
 function fmt(n: number, d = 1) {
   return n.toFixed(d);
 }
@@ -36,15 +105,16 @@ function zonePos(item: RangeValue, min: number, max: number) {
   return Math.max(0, Math.min(100, ((item.value - min) / span) * 100));
 }
 
-function muscleFatBarHtml(item: RangeValue, unit: string): string {
+function muscleFatBarHtml(item: RangeValue, unit: string, decimals = 1): string {
   const min = item.low * 0.75;
   const max = item.high * 1.25;
   const pos = zonePos(item, min, max);
+  const unitSuffix = unit ? ` ${unit}` : '';
   return `<div class="mf-track">
     <div class="mf-low"></div><div class="mf-normal"></div><div class="mf-over"></div>
     <div class="mf-marker" style="left:${pos}%"></div>
   </div>
-  <div class="mf-meta"><span class="mf-zones">${REPORT_LABELS.zoneLow} · ${REPORT_LABELS.zoneNormal} · ${REPORT_LABELS.zoneOver}</span><b>${fmt(item.value)} ${unit}</b></div>`;
+  <div class="mf-meta"><span class="mf-zones">${REPORT_LABELS.zoneLow} · ${REPORT_LABELS.zoneNormal} · ${REPORT_LABELS.zoneOver}</span><b>${fmt(item.value, decimals)}${unitSuffix}</b></div>`;
 }
 
 function gaugeBarHtml(item: RangeValue, unit: string, decimals = 1): string {
@@ -60,7 +130,7 @@ function gaugeBarHtml(item: RangeValue, unit: string, decimals = 1): string {
   </div>`;
 }
 
-function buildChartSvg(data: ClientDashboard['chartData']): string {
+function buildChartSvg(data: ClientDashboard['chartData'], theme: ThemeTokens): string {
   const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date)).slice(-5);
   if (!sorted.length) return '';
 
@@ -89,12 +159,12 @@ function buildChartSvg(data: ClientDashboard['chartData']): string {
     const cw = panelW - 8;
     const ih = ph - 30;
 
-    svg += `<text x="${left + cw / 2}" y="${top - 6}" font-size="9" font-weight="600" fill="${T.title}" text-anchor="middle">${panel.label}</text>`;
-    svg += `<rect x="${left}" y="${top}" width="${cw}" height="${ph - 16}" fill="#fff" stroke="${T.border}" stroke-width="1" rx="8"/>`;
+    svg += `<text x="${left + cw / 2}" y="${top - 6}" font-size="9" font-weight="600" fill="${theme.title}" text-anchor="middle">${panel.label}</text>`;
+    svg += `<rect x="${left}" y="${top}" width="${cw}" height="${ph - 16}" fill="${theme.chartBg}" stroke="${theme.border}" stroke-width="1" rx="8"/>`;
 
     for (let g = 1; g <= 3; g++) {
       const gy = top + 8 + (ih * g) / 4;
-      svg += `<line x1="${left + 8}" y1="${gy}" x2="${left + cw - 8}" y2="${gy}" stroke="#ECEFF1" stroke-width="1"/>`;
+      svg += `<line x1="${left + 8}" y1="${gy}" x2="${left + cw - 8}" y2="${gy}" stroke="${theme.chartGrid}" stroke-width="1"/>`;
     }
 
     const pts = values.map((v, i) => {
@@ -104,12 +174,12 @@ function buildChartSvg(data: ClientDashboard['chartData']): string {
     });
 
     const path = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-    svg += `<path d="${path}" fill="none" stroke="${T.gold}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+    svg += `<path d="${path}" fill="none" stroke="${theme.gold}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
     pts.forEach((p) => {
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${T.gold}"/>`;
-      svg += `<text x="${p.x}" y="${p.y - 6}" text-anchor="middle" font-size="8" font-weight="700" fill="${T.text}">${p.v.toFixed(1)}</text>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${theme.gold}"/>`;
+      svg += `<text x="${p.x}" y="${p.y - 6}" text-anchor="middle" font-size="8" font-weight="700" fill="${theme.text}">${p.v.toFixed(1)}</text>`;
       const d = sorted[p.i].date.split('-').reverse().slice(0, 2).join('/');
-      svg += `<text x="${p.x}" y="${top + ph - 20}" text-anchor="middle" font-size="7.5" fill="${T.muted}">${d}</text>`;
+      svg += `<text x="${p.x}" y="${top + ph - 20}" text-anchor="middle" font-size="7.5" fill="${theme.muted}">${d}</text>`;
     });
   });
   svg += '</svg>';
@@ -128,9 +198,10 @@ function renderReport(
   client: ClientDashboard['client'],
   chartData: ClientDashboard['chartData'],
   generatedAt: string,
+  theme: ThemeTokens,
+  htmlTheme: ReportHtmlTheme,
   company?: CompanySettings
-): string {
-  const exam = formatExam(r);
+): string {  const exam = formatExam(r);
   const companyName = company?.name?.trim() || 'BodyTrack';
   const address = company?.address?.trim() || '';
   const phone = company?.phone?.trim() || '';
@@ -151,15 +222,15 @@ function renderReport(
     .join('');
 
   const segmentSvg = buildSegmentSvgMarkup(r, client.height, {
-    theme: SILHOUETTE_THEME_PRINT,
+    theme: htmlTheme === 'screen' ? SILHOUETTE_THEME_SCREEN : SILHOUETTE_THEME_PRINT,
     compact: true,
     fillPage: true,
   });
 
+  const headerClass = htmlTheme === 'screen' ? 'header header-screen' : 'header';
   return `
   <div class="sheet">
-    <header class="header">
-      <div class="header-brand">
+    <header class="${headerClass}">      <div class="header-brand">
         ${logo}
         <div>
           <div class="clinic-name">${companyName}</div>
@@ -171,6 +242,7 @@ function renderReport(
     </header>
 
     <section class="patient card">
+      <div class="patient-item"><span>ID</span><b>${client.externalId}</b></div>
       <div class="patient-item"><span>Paciente</span><b>${client.name}</b></div>
       <div class="patient-item"><span>Data</span><b>${exam}</b></div>
       <div class="patient-item"><span>Sexo</span><b>${genderLabel(client.gender)}</b></div>
@@ -220,6 +292,10 @@ function renderReport(
           <div class="metric-label">${REPORT_LABELS.bodyFat}</div>
           ${muscleFatBarHtml(r.section2.bodyFat, 'kg')}
         </div>
+        <div class="metric">
+          <div class="metric-label">${REPORT_LABELS.visceralFat}</div>
+          ${muscleFatBarHtml(r.section2.visceralFat, '', 0)}
+        </div>
       </section>
 
       <section class="card block">
@@ -234,8 +310,7 @@ function renderReport(
         </div>
         <div class="metric">
           <div class="metric-label">${REPORT_LABELS.waistHip}</div>
-          ${gaugeBarHtml(r.section3.waistHip, '', 2)}
-        </div>
+          ${gaugeBarHtml(r.section3.waistHip, '', 2)}        </div>
       </section>
 
       <section class="card block seg-block">
@@ -273,8 +348,7 @@ function renderReport(
 
     <section class="card block chart-block">
       <h2 class="block-title">${REPORT_LABELS.section7}</h2>
-      <div class="chart-wrap">${buildChartSvg(chartData)}</div>
-    </section>
+      <div class="chart-wrap">${buildChartSvg(chartData, theme)}</div>    </section>
 
     <footer class="footer">
       <span>${companyName}</span>
@@ -285,20 +359,31 @@ function renderReport(
 
 export function buildBodbodyReportHtml(
   data: ClientDashboard,
-  company?: CompanySettings
+  company?: CompanySettings,
+  options?: { theme?: ReportHtmlTheme }
 ): string {
   const r = data.bodbodyReport;
   const generatedAt = new Date().toLocaleString('pt-BR');
+  const htmlTheme = options?.theme ?? 'print';
+  const theme = resolveTheme(htmlTheme);
 
   if (!r) {
     return `<!DOCTYPE html><html><body><p>Sem dados de relatório.</p></body></html>`;
   }
 
-  const body = renderReport(r, data.client, data.chartData, generatedAt, company);
+  const body = renderReport(r, data.client, data.chartData, generatedAt, theme, htmlTheme, company);
 
   return `<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8"/>
 <style>
+${buildReportStyles(theme)}
+</style></head><body>
+${body}
+</body></html>`;
+}
+
+function buildReportStyles(T: ThemeTokens): string {
+  return `
   @page { size: A4 portrait; margin: 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -326,7 +411,7 @@ export function buildBodbodyReportHtml(
     background: ${T.card};
     border: 1px solid ${T.border};
     border-radius: 10px;
-    box-shadow: 0 1px 2px rgba(22,48,64,0.04);
+    box-shadow: ${T.cardShadow};
   }
   .header {
     display: flex;
@@ -337,6 +422,10 @@ export function buildBodbodyReportHtml(
     color: #fff;
     border-radius: 10px;
     padding: 12px 16px;
+    border: 1px solid ${T.border};
+  }
+  .header-screen {
+    color: ${T.text};
   }
   .header-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .logo {
@@ -344,7 +433,7 @@ export function buildBodbodyReportHtml(
     width: auto;
     max-width: 120px;
     object-fit: contain;
-    background: #fff;
+    background: ${T.logoBg};
     border-radius: 6px;
     padding: 3px 6px;
   }
@@ -360,12 +449,12 @@ export function buildBodbodyReportHtml(
     font-weight: 700;
     font-size: 12px;
   }
-  .clinic-name { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
-  .clinic-meta { font-size: 9px; color: rgba(255,255,255,0.78); margin-top: 2px; }
+  .clinic-name { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; color: ${T.gold}; }
+  .clinic-meta { font-size: 9px; color: ${T.headerMeta}; margin-top: 2px; }
   .header-title {
     font-size: 12px;
     font-weight: 600;
-    color: ${T.gold};
+    color: ${T.headerTitle};
     text-align: right;
     max-width: 42%;
     line-height: 1.3;
@@ -403,7 +492,7 @@ export function buildBodbodyReportHtml(
     padding: 10px 6px;
     border: 1px solid ${T.border};
     border-radius: 10px;
-    background: #FCFCFD;
+    background: ${T.compCardBg};
   }
   .comp-icon { font-size: 18px; filter: grayscale(0.2); }
   .comp-name {
@@ -416,7 +505,7 @@ export function buildBodbodyReportHtml(
     margin-top: 4px;
     font-size: 18px;
     font-weight: 700;
-    color: ${T.title};
+    color: ${T.text};
   }
   .comp-value small { font-size: 10px; font-weight: 500; color: ${T.muted}; }
   .row-3 {
@@ -436,7 +525,7 @@ export function buildBodbodyReportHtml(
   .metric-label {
     font-size: 9.5px;
     font-weight: 600;
-    color: ${T.title};
+    color: ${T.muted};
     margin-bottom: 4px;
   }
   .mf-track {
@@ -485,7 +574,7 @@ export function buildBodbodyReportHtml(
     margin-left: -4px;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
-    border-bottom: 6px solid ${T.marker};
+    border-bottom: 6px solid ${T.gold};
   }
   .seg-block { display: flex; flex-direction: column; min-height: 0; }
   .seg-wrap {
@@ -505,11 +594,11 @@ export function buildBodbodyReportHtml(
   .eval th, .eval td {
     padding: 7px 4px;
     text-align: center;
-    border-bottom: 1px solid #ECEFF1;
+    border-bottom: 1px solid ${T.rowBorder};
     font-size: 10px;
   }
   .eval th { color: ${T.gold}; font-weight: 600; }
-  .eval td:first-child { text-align: left; font-weight: 600; color: ${T.title}; }
+  .eval td:first-child { text-align: left; font-weight: 600; color: ${T.text}; }
   .eval td { color: ${T.gold}; font-weight: 700; }
   .control-list { display: flex; flex-direction: column; gap: 8px; }
   .control-list div {
@@ -517,7 +606,7 @@ export function buildBodbodyReportHtml(
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid #ECEFF1;
+    border-bottom: 1px solid ${T.rowBorder};
   }
   .control-list div:last-child { border-bottom: none; }
   .control-list span { color: ${T.muted}; font-weight: 500; }
@@ -538,8 +627,5 @@ export function buildBodbodyReportHtml(
   @media print {
     html, body { background: ${T.page}; }
     .sheet { min-height: 277mm; }
-  }
-</style></head><body>
-${body}
-</body></html>`;
+  }`;
 }

@@ -1,0 +1,27 @@
+{
+  "source": {
+    "name": "BodyTrack",
+    "subtitle": "Análise corporal Bodbody",
+    "description": "Source oficial do BodyTrack para instalação via AltStore. Leitura de QR Code, relatórios e cadastro de clientes.",
+    "website": "https://github.com/dkillers-rgb/BodyTrack",
+    "tintColor": "#0B1A2E",
+    "sourceURL": "https://raw.githubusercontent.com/dkillers-rgb/BodyTrack/main/mobile/altstore/source.json",
+    "iconURL": "https://raw.githubusercontent.com/dkillers-rgb/BodyTrack/main/mobile/altstore/icon.png"
+  },
+  "app": {
+    "name": "BodyTrack",
+    "bundleIdentifier": "com.bodytrack.app",
+    "developerName": "Levèz",
+    "subtitle": "Análise corporal",
+    "localizedDescription": "Aplicativo para leitura de QR Code de equipamentos de análise corporal, cadastro de clientes e geração de relatórios Bodbody.",
+    "iconURL": "https://raw.githubusercontent.com/dkillers-rgb/BodyTrack/main/mobile/altstore/icon.png",
+    "tintColor": "#0B1A2E",
+    "category": "utilities",
+    "minOSVersion": "15.0"
+  },
+  "latestVersion": {
+    "downloadURL": "https://github.com/dkillers-rgb/BodyTrack/releases/download/v1.0.0/BodyTrack.ipa",
+    "localizedDescription": "Primeira versão para AltStore.",
+    "size": 0
+  }
+}

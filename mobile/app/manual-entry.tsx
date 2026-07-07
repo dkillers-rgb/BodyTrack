@@ -9,6 +9,7 @@ export default function ManualEntryScreen() {
     weight?: string;
     skeletalMuscle?: string;
     bodyFat?: string;
+    visceralFat?: string;
     imagePath?: string;
     rawOcrText?: string;
     showHint?: string;
@@ -21,6 +22,7 @@ export default function ManualEntryScreen() {
         weight: params.weight,
         skeletalMuscle: params.skeletalMuscle,
         bodyFat: params.bodyFat,
+        visceralFat: params.visceralFat,
       }}
       showHint={params.showHint === '1'}
       imagePath={params.imagePath}
