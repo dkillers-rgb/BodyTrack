@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"/>
+<style>
+  @page { size: A4 portrait; margin: 5mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 287mm;
+    overflow: hidden;
+  }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #111;
+    font-size: 10px;
+    line-height: 1.25;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sheet {
+    height: 287mm;
+    display: flex;
+    flex-direction: column;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .report-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .top-header {
+    background: #263238;
+    color: #fff;
+    text-align: center;
+    padding: 10px 12px 8px;
+    flex-shrink: 0;
+  }
+  .brand { font-weight: 800; font-size: 16px; }
+  .subtitle { font-size: 9px; color: #cfd8dc; margin-top: 2px; }
+  .patient-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 9px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+  }
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1.15fr 1.35fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+    min-height: 0;
+  }
+  .span-all { grid-column: 1 / -1; }
+  .stack { display: flex; flex-direction: column; min-height: 0; }
+  .stack .sb.wc {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+  .section {
+    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .seg-section .sb.seg {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 6px 8px;
+  }
+  .seg-body-svg, .seg-body-svg-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+  }
+  .chart-section .sb.chart {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: stretch;
+    padding: 6px 8px 8px;
+  }
+  .chart-svg { width: 100%; height: 100%; min-height: 90px; }
+  .sh { color: #fff; font-weight: 700; padding: 5px 8px; font-size: 10px; flex-shrink: 0; }
+  .sb { padding: 8px 10px; background: #fff; flex-shrink: 0; }
+  .section:not(.seg-section):not(.chart-section) > .sb:not(.comp-grid) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    min-height: 0;
+  }
+  .s1-section > .sb.comp-grid {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    align-items: center;
+  }
+  .comp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .comp { text-align: center; padding: 6px 4px; }
+  .ci { font-size: 22px; line-height: 1; }
+  .cl { color: #616161; font-size: 8.5px; font-weight: 600; margin-top: 4px; }
+  .cv { font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .br { margin-bottom: 8px; }
+  .br:last-child { margin-bottom: 0; }
+  .bl { font-weight: 600; font-size: 8.5px; margin-bottom: 3px; }
+  .mf-track { display: flex; height: 13px; border-radius: 2px; overflow: hidden; position: relative; }
+  .mf-low { flex: 1; background: #BDBDBD; }
+  .mf-normal { flex: 2; background: #A5D6A7; }
+  .mf-over { flex: 1; background: #FFCC80; }
+  .mf-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #212121; }
+  .mf-val { font-weight: 700; font-size: 10px; margin-top: 2px; }
+  .mf-legend { display: flex; justify-content: space-between; font-size: 8px; color: #757575; margin-top: 6px; }
+  .gauge-wrap { position: relative; height: 22px; margin-bottom: 2px; }
+  .gauge-bar { height: 12px; border-radius: 2px; background: linear-gradient(90deg, #64B5F6, #81C784, #EF5350); }
+  .gauge-pointer { position: absolute; top: 10px; font-size: 9px; margin-left: -5px; line-height: 1; }
+  .gauge-labels { display: flex; justify-content: space-between; font-size: 8px; color: #757575; }
+  .gauge-labels b { font-size: 10px; color: #111; }
+  .eval { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+  .eval th, .eval td { border-bottom: 1px solid #eee; padding: 5px 4px; text-align: center; }
+  .eval td:first-child { text-align: left; font-weight: 600; }
+  .wc div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; font-size: 9.5px; }
+  .wc div:last-child { border-bottom: none; }
+  .footer {
+    background: #263238;
+    color: #cfd8dc;
+    text-align: center;
+    padding: 7px;
+    font-size: 8.5px;
+    flex-shrink: 0;
+  }
+  @media print {
+    html, body { height: 287mm; }
+    .sheet { height: 287mm; }
+  }
+</style></head><body>
+
+  <div class="sheet">
+  <div class="report-page">
+    <div class="top-header">
+      <div class="brand">BodyTrack</div>
+      <div class="subtitle">Relatório de análise da composição corporal</div>
+      <div class="patient-bar">
+        <span>ID 149</span><span>Paciente Teste</span><span>F</span>
+        <span>32 anos</span><span>158 cm</span><span>11:38 01.07.2026</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="section span-all s1-section"><div class="sh" style="background:#43A047">1 Análise da Composição Corporal</div>
+        <div class="sb comp-grid">
+          <div class="comp"><div class="ci">💧</div><div class="cl">Umidade Corporal</div><div class="cv">30.5 kg</div></div>
+          <div class="comp"><div class="ci">🧬</div><div class="cl">Proteína</div><div class="cv">8.3 kg</div></div>
+          <div class="comp"><div class="ci">🦴</div><div class="cl">Sal Inorgânico</div><div class="cv">2.9 kg</div></div>
+          <div class="comp"><div class="ci">🔴</div><div class="cl">Gordura Corporal</div><div class="cv">16.8 kg</div></div>
+        </div>
+      </div>
+
+      <div class="section"><div class="sh" style="background:#26A69A">2 Análise de Músculo e Gordura</div>
+        <div class="sb">
+          <div class="br"><div class="bl">Peso (kg)</div><div class="mf-track">
+    <div class="mf-low"></div><div class="mf-normal"></div><div class="mf-over"></div>
+    <div class="mf-fill" style="width:61.41920095408467%"></div>
+  </div>
+  <div class="mf-val">59.2 kg</div></div>
+          <div class="br"><div class="bl">Músculo Esquelético (kg)</div><div class="mf-track">
+    <div class="mf-low"></div><div class="mf-normal"></div><div class="mf-over"></div>
+    <div class="mf-fill" style="width:52.28013029315962%"></div>
+  </div>
+  <div class="mf-val">22.8 kg</div></div>
+          <div class="br"><div class="bl">Gordura Corporal (kg)</div><div class="mf-track">
+    <div class="mf-low"></div><div class="mf-normal"></div><div class="mf-over"></div>
+    <div class="mf-fill" style="width:73.33333333333333%"></div>
+  </div>
+  <div class="mf-val">17.5 kg</div></div>
+          <div class="mf-legend"><span>Baixo</span><span>Normal</span><span>Alto</span></div>
+        </div>
+      </div>
+
+      <div class="section"><div class="sh" style="background:#1E88E5">3 Análise de Sobrepeso</div>
+        <div class="sb">
+          <div class="br"><div class="bl">IMC (kg/m²)</div><div class="gauge-wrap">
+    <div class="gauge-bar"></div>
+    <div class="gauge-pointer" style="left:80%">▼</div>
+  </div>
+  <div class="gauge-labels">
+    <span>18.5</span>
+    <b>23.7</b>
+    <span>25.0</span>
+  </div></div>
+          <div class="br"><div class="bl">Gordura Corporal (%)</div><div class="gauge-wrap">
+    <div class="gauge-bar"></div>
+    <div class="gauge-pointer" style="left:65.38461538461539%">▼</div>
+  </div>
+  <div class="gauge-labels">
+    <span>10.0</span>
+    <b>18.5%</b>
+    <span>23.0</span>
+  </div></div>
+          <div class="br"><div class="bl">Relação Cintura-Quadril</div><div class="gauge-wrap">
+    <div class="gauge-bar"></div>
+    <div class="gauge-pointer" style="left:100%">▼</div>
+  </div>
+  <div class="gauge-labels">
+    <span>0.75</span>
+    <b>0.85</b>
+    <span>0.85</span>
+  </div></div>
+        </div>
+      </div>
+
+      <div class="section seg-section"><div class="sh" style="background:#7B1FA2">4 Músculos Segmentares</div>
+        <div class="sb seg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" width="100%" height="100%" class="seg-body-svg seg-body-svg-fill" preserveAspectRatio="xMidYMid meet">
+    
+  <ellipse cx="180" cy="34" rx="20" ry="24" fill="none" stroke="#111" stroke-width="1.4"/>
+  <path d="M 158 56 Q 145 62 138 78 L 132 108 Q 130 118 138 122 L 148 118 L 154 88 Q 156 72 164 62 Z" fill="none" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 202 56 Q 215 62 222 78 L 228 108 Q 230 118 222 122 L 212 118 L 206 88 Q 204 72 196 62 Z" fill="none" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 164 58 L 196 58 L 200 68 L 198 128 Q 197 142 180 145 Q 163 142 162 128 L 160 68 Z" fill="none" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 168 145 L 162 210 Q 160 228 154 236 L 170 236 Q 172 220 174 200 L 176 145 Z" fill="none" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M 192 145 L 198 210 Q 200 228 206 236 L 190 236 Q 188 220 186 200 L 184 145 Z" fill="none" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>
+
+    <text x="52" y="52" font-size="11" fill="#111" text-anchor="middle">2.1kg</text>
+    <text x="52" y="66" font-size="11" fill="#111" text-anchor="middle">15.8%</text>
+    <text x="52" y="80" font-size="10" fill="#111" text-anchor="middle">(E)</text>
+    <text x="308" y="52" font-size="11" fill="#111" text-anchor="middle">2.1kg</text>
+    <text x="308" y="66" font-size="11" fill="#111" text-anchor="middle">15.8%</text>
+    <text x="308" y="80" font-size="10" fill="#111" text-anchor="middle">(D)</text>
+    <text x="180" y="108" font-size="11" fill="#111" text-anchor="middle">18.5kg</text>
+    <text x="180" y="122" font-size="11" fill="#111" text-anchor="middle">18.7%</text>
+    <text x="72" y="178" font-size="11" fill="#111" text-anchor="middle">6.5kg</text>
+    <text x="72" y="192" font-size="11" fill="#111" text-anchor="middle">21.4%</text>
+    <text x="72" y="206" font-size="10" fill="#111" text-anchor="middle">(E)</text>
+    <text x="288" y="178" font-size="11" fill="#111" text-anchor="middle">6.7kg</text>
+    <text x="288" y="192" font-size="11" fill="#111" text-anchor="middle">21.6%</text>
+    <text x="288" y="206" font-size="10" fill="#111" text-anchor="middle">(D)</text>
+  </svg></div>
+      </div>
+
+      <div class="section stack">
+        <div class="sh" style="background:#795548">5 Avaliação Abrangente</div>
+        <div class="sb">
+          <table class="eval"><tr><th></th><th>Abaixo</th><th>Normal</th><th>Acima</th></tr><tr><td>Peso</td><td></td><td>✓</td><td></td></tr><tr><td>Músculo</td><td></td><td>✓</td><td></td></tr><tr><td>Gordura</td><td></td><td>✓</td><td></td></tr><tr><td>Obesidade</td><td></td><td>✓</td><td></td></tr></table>
+        </div>
+        <div class="sh" style="background:#EC407A">6 Controle de Peso</div>
+        <div class="sb wc">
+          <div><span>Peso Alvo</span><b>54.1 kg</b></div>
+          <div><span>Controle de Peso</span><b>-5.1 kg</b></div>
+          <div><span>Taxa Metabólica Basal (TMB)</span><b>1270 kcal</b></div>
+          <div><span>Pontuação Geral</span><b>76 / 100</b></div>
+        </div>
+      </div>
+
+      <div class="section span-all chart-section"><div class="sh" style="background:#37474F">7 Evolução — Últimas avaliações</div>
+        <div class="sb chart"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 760 106" preserveAspectRatio="xMidYMid meet" class="chart-svg"><text x="119" y="11" font-size="8" font-weight="600" text-anchor="middle">Peso (kg)</text><rect x="0" y="16" width="238" height="70" fill="#fff" stroke="#e0e0e0" stroke-width="0.6"/><path d="M21.4,54.7 L86.5,49.3 L151.5,45.4 L216.6,59.3" fill="none" stroke="#111" stroke-width="1.2"/><circle cx="21.419999999999998" cy="54.65044814340591" r="2.8" fill="#111"/><text x="21.419999999999998" y="49.65044814340591" text-anchor="middle" font-size="7" font-weight="600">59.8</text><text x="21.419999999999998" y="84" text-anchor="middle" font-size="6.5">15/01</text><circle cx="86.47333333333333" cy="49.272727272727266" r="2.8" fill="#111"/><text x="86.47333333333333" y="44.272727272727266" text-anchor="middle" font-size="7" font-weight="600">60.5</text><text x="86.47333333333333" y="84" text-anchor="middle" font-size="6.5">10/03</text><circle cx="151.52666666666664" cy="45.43149807938539" r="2.8" fill="#111"/><text x="151.52666666666664" y="40.43149807938539" text-anchor="middle" font-size="7" font-weight="600">61.0</text><text x="151.52666666666664" y="84" text-anchor="middle" font-size="6.5">20/05</text><circle cx="216.57999999999998" cy="59.25992317541611" r="2.8" fill="#111"/><text x="216.57999999999998" y="54.25992317541611" text-anchor="middle" font-size="7" font-weight="600">59.2</text><text x="216.57999999999998" y="84" text-anchor="middle" font-size="6.5">01/07</text><text x="375" y="11" font-size="8" font-weight="600" text-anchor="middle">Massa Muscular Esquelética (kg)</text><rect x="256" y="16" width="238" height="70" fill="#fff" stroke="#e0e0e0" stroke-width="0.6"/><path d="M277.4,70.4 L342.5,66.9 L407.5,63.4 L472.6,35.3" fill="none" stroke="#111" stroke-width="1.2"/><circle cx="277.42" cy="70.42105263157893" r="2.8" fill="#111"/><text x="277.42" y="65.42105263157893" text-anchor="middle" font-size="7" font-weight="600">19.8</text><text x="277.42" y="84" text-anchor="middle" font-size="6.5">15/01</text><circle cx="342.47333333333336" cy="66.91228070175437" r="2.8" fill="#111"/><text x="342.47333333333336" y="61.91228070175437" text-anchor="middle" font-size="7" font-weight="600">20.1</text><text x="342.47333333333336" y="84" text-anchor="middle" font-size="6.5">10/03</text><circle cx="407.52666666666664" cy="63.403508771929836" r="2.8" fill="#111"/><text x="407.52666666666664" y="58.403508771929836" text-anchor="middle" font-size="7" font-weight="600">20.4</text><text x="407.52666666666664" y="84" text-anchor="middle" font-size="6.5">20/05</text><circle cx="472.58" cy="35.333333333333336" r="2.8" fill="#111"/><text x="472.58" y="30.333333333333336" text-anchor="middle" font-size="7" font-weight="600">22.8</text><text x="472.58" y="84" text-anchor="middle" font-size="6.5">01/07</text><text x="631" y="11" font-size="8" font-weight="600" text-anchor="middle">Percentual de Gordura Corporal (%)</text><rect x="512" y="16" width="238" height="70" fill="#fff" stroke="#e0e0e0" stroke-width="0.6"/><path d="M533.4,36.9 L598.5,34.6 L663.5,32.5 L728.6,73.5" fill="none" stroke="#111" stroke-width="1.2"/><circle cx="533.42" cy="36.91721749535436" r="2.8" fill="#111"/><text x="533.42" y="31.917217495354357" text-anchor="middle" font-size="7" font-weight="600">36.0</text><text x="533.42" y="84" text-anchor="middle" font-size="6.5">15/01</text><circle cx="598.4733333333334" cy="34.5660508228008" r="2.8" fill="#111"/><text x="598.4733333333334" y="29.566050822800797" text-anchor="middle" font-size="7" font-weight="600">36.4</text><text x="598.4733333333334" y="84" text-anchor="middle" font-size="6.5">10/03</text><circle cx="663.5266666666666" cy="32.51723818864851" r="2.8" fill="#111"/><text x="663.5266666666666" y="27.517238188648513" text-anchor="middle" font-size="7" font-weight="600">36.7</text><text x="663.5266666666666" y="84" text-anchor="middle" font-size="6.5">20/05</text><circle cx="728.5799999999999" cy="73.53357884412532" r="2.8" fill="#111"/><text x="728.5799999999999" y="68.53357884412532" text-anchor="middle" font-size="7" font-weight="600">29.6</text><text x="728.5799999999999" y="84" text-anchor="middle" font-size="6.5">01/07</text></svg></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">BodyTrack — Relatório gerado em 03/07/2026, 15:39:48</div>
+  </div>
+</body></html>

@@ -5,7 +5,7 @@ import EvolutionChart from '../components/EvolutionChart';
 import ClientReport from '../components/ClientReport';
 import { exportElementToPdf } from '../utils/exportPdf';
 
-const emptyForm: ClientInput = { name: '', gender: 'MALE', age: 0, height: 0 };
+const emptyForm: ClientInput = { externalId: '', name: '', gender: 'MALE', age: 0, height: 0, phone: '' };
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,10 +37,12 @@ export default function ClientDetailPage() {
   const startEdit = () => {
     if (!data) return;
     setForm({
+      externalId: data.client.externalId,
       name: data.client.name,
       gender: data.client.gender,
       age: data.client.age,
       height: data.client.height,
+      phone: data.client.phone ?? '',
     });
     setError('');
     setEditing(true);
@@ -54,6 +56,10 @@ export default function ClientDetailPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!data) return;
+    if (!form.externalId.trim()) {
+      setError('Informe o ID do cliente.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -69,30 +75,20 @@ export default function ClientDetailPage() {
 
   const handleExportPdf = async () => {
     if (!reportRef.current || !data) return;
-    const container = reportRef.current.parentElement;
-    if (!container) return;
-
     setExportingPdf(true);
     setError('');
-
-    const previousStyle = container.style.cssText;
-    container.style.cssText =
-      'position: fixed; left: 0; top: 0; width: 794px; z-index: 9999; opacity: 0; pointer-events: none;';
-
     try {
-      const slug = data.client.name
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .toLowerCase();
-      await exportElementToPdf(reportRef.current, `relatorio-${slug || 'cliente'}.pdf`);
+      const slug = data.client.externalId || String(data.client.id);
+      await exportElementToPdf(reportRef.current, `relatorio-${slug}.pdf`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao gerar PDF');
     } finally {
-      container.style.cssText = previousStyle;
       setExportingPdf(false);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   if (loading) return <div className="loading">Carregando...</div>;
@@ -101,23 +97,27 @@ export default function ClientDetailPage() {
   const { client, evaluations, chartData, analysis, summary } = data;
 
   return (
-    <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div className="client-detail-page">
+      <div className="page-header no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1>{client.name}</h1>
           <p>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              ID: <code>{client.id}</code>
+              ID: <code>{client.externalId}</code>
             </span>
             {' · '}
             {client.gender === 'MALE' ? 'Masculino' : client.gender === 'FEMALE' ? 'Feminino' : 'Outro'}
             {' · '}{client.age} anos · {client.height} cm
+            {client.phone ? ` · ${client.phone}` : ''}
           </p>
         </div>
         {!editing && (
           <div style={{ display: 'flex', gap: 12 }}>
             <button className="btn-primary" onClick={handleExportPdf} disabled={exportingPdf}>
-              {exportingPdf ? 'Gerando PDF...' : 'Imprimir relatório (PDF)'}
+              {exportingPdf ? 'Gerando PDF...' : 'Exportar PDF'}
+            </button>
+            <button className="btn-secondary" onClick={handlePrint}>
+              Imprimir
             </button>
             <button className="btn-secondary" onClick={startEdit}>
               Editar dados
@@ -126,25 +126,24 @@ export default function ClientDetailPage() {
         )}
       </div>
 
-      {error && !editing && (
-        <p className="error" style={{ marginBottom: 16 }}>{error}</p>
-      )}
-
-      <div
-        aria-hidden="true"
-        style={{ position: 'fixed', left: '-9999px', top: 0, width: 794, pointerEvents: 'none' }}
-      >
-        <ClientReport ref={reportRef} data={data} />
-      </div>
+      {error && !editing && <p className="error no-print" style={{ marginBottom: 16 }}>{error}</p>}
 
       {editing && (
-        <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card no-print" style={{ marginBottom: 24 }}>
           <h3 className="card-title">Editar cliente</h3>
           <form onSubmit={handleSubmit}>
             <div className="grid-2">
               <div className="form-group">
-                <label>Nome</label>
+                <label>ID *</label>
+                <input value={form.externalId} onChange={(e) => setForm({ ...form, externalId: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Nome *</label>
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Telefone</label>
+                <input value={form.phone ?? ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div className="form-group">
                 <label>Sexo</label>
@@ -176,7 +175,7 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      <div className="grid-3" style={{ marginBottom: 24 }}>
+      <div className="grid-3 no-print" style={{ marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-value">{summary.latestWeight ?? '—'}</div>
           <div className="stat-label">Peso atual (kg)</div>
@@ -196,17 +195,21 @@ export default function ClientDetailPage() {
       </div>
 
       {analysis && (
-        <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--primary)' }}>
-          <h3 className="card-title">Análise IA</h3>
+        <div className="card no-print" style={{ marginBottom: 24, borderLeft: '4px solid var(--primary)' }}>
+          <h3 className="card-title">Análise</h3>
           <p>{analysis}</p>
         </div>
       )}
 
-      <div style={{ marginBottom: 24 }}>
+      <div className="no-print" style={{ marginBottom: 24 }}>
         <EvolutionChart data={chartData} />
       </div>
 
-      <div className="card">
+      <div className="card printable-report" style={{ marginBottom: 24 }}>
+        <ClientReport ref={reportRef} data={data} />
+      </div>
+
+      <div className="card no-print">
         <h3 className="card-title">Histórico de avaliações</h3>
         <table>
           <thead>
@@ -215,6 +218,7 @@ export default function ClientDetailPage() {
               <th>Peso</th>
               <th>Músculo</th>
               <th>Gordura</th>
+              <th>Visceral</th>
             </tr>
           </thead>
           <tbody>
@@ -224,6 +228,7 @@ export default function ClientDetailPage() {
                 <td>{ev.weight} kg</td>
                 <td>{ev.skeletalMuscle} kg</td>
                 <td>{ev.bodyFat} kg</td>
+                <td>{ev.visceralFat ?? '—'}</td>
               </tr>
             ))}
           </tbody>

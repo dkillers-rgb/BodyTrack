@@ -5,12 +5,20 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   server: {
-    host: '127.0.0.1',
+    host: true,
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api': 'http://localhost:3001',
-      '/uploads': 'http://localhost:3001',
+      '/api': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+      '/uploads': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+    },
+  },
+  preview: {
+    host: true,
+    port: 4173,
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+      '/uploads': { target: 'http://127.0.0.1:3001', changeOrigin: true },
     },
   },
 });

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Prévia BodySilhouette — Músculos Segmentares</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, Roboto, Arial, Helvetica, sans-serif;
+    background: #0A111A;
+    color: #F5F5F5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sheet {
+    max-width: 210mm;
+    min-height: 277mm;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  .card {
+    background: #0F1A24;
+    border: 1px solid #3A4550;
+    border-radius: 8px;
+    padding: 16px 18px 20px;
+  }
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .badge {
+    width: 22px;
+    height: 22px;
+    background: #C7A25A;
+    color: #0A111A;
+    font-weight: 800;
+    font-size: 12px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-title h1 {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #F5F5F5;
+  }
+  .seg {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 4px;
+    align-items: center;
+    min-height: 460px;
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 420px;
+    padding: 24px 0;
+  }
+  .col.left { align-items: flex-start; text-align: left; }
+  .col.right { align-items: flex-end; text-align: right; }
+  .metric b {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #F5F5F5;
+  }
+  .metric .pct {
+    display: block;
+    margin-top: 3px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #C7A25A;
+  }
+  .metric .side {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    color: #C8D0D8;
+  }
+  .body-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 460px;
+  }
+  .body-wrap svg {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+  }
+  .trunk-label {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    text-align: center;
+    pointer-events: none;
+  }
+  .trunk-label b { font-size: 15px; color: #F5F5F5; }
+  .trunk-label .pct { font-size: 14px; color: #C7A25A; font-weight: 600; margin-top: 2px; }
+  .note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #8A96A3;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <section class="card">
+    <div class="card-title">
+      <div class="badge">4</div>
+      <h1>MÚSCULOS SEGMENTARES</h1>
+    </div>
+
+    <div class="seg">
+      <div class="col left">
+        <div class="metric">
+          <b>2.1 kg</b>
+          <span class="pct">15.8%</span>
+          <span class="side">(E)</span>
+        </div>
+        <div class="metric">
+          <b>6.5 kg</b>
+          <span class="pct">21.4%</span>
+          <span class="side">(E)</span>
+        </div>
+      </div>
+
+      <div class="body-wrap">
+        <svg viewBox="0 0 220 520" xmlns="http://www.w3.org/2000/svg" aria-label="Silhueta corporal">
+          <!-- Head -->
+          <g id="Head">
+            <ellipse cx="110" cy="42" rx="24" ry="30"
+              fill="none" stroke="#C7A25A" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+
+          <!-- Contorno contínuo: Torso + braços + pernas -->
+          <g id="Torso">
+            <path
+              fill="none" stroke="#C7A25A" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"
+              d="M 98 74
+                 C 86 78 70 88 60 104
+                 C 50 122 44 146 42 172
+                 C 40 198 42 222 48 242
+                 C 50 252 56 256 64 252
+                 C 56 234 52 210 52 186
+                 C 52 162 56 140 66 122
+                 C 70 142 72 168 74 196
+                 C 76 228 78 258 82 286
+                 C 80 312 78 340 78 368
+                 C 78 396 80 424 84 450
+                 C 86 462 90 470 100 472
+                 L 108 472
+                 C 106 444 104 416 104 388
+                 C 104 360 106 332 108 306
+                 L 112 306
+                 C 114 332 116 360 116 388
+                 C 116 416 114 444 112 472
+                 L 120 472
+                 C 130 470 134 462 136 450
+                 C 140 424 142 396 142 368
+                 C 142 340 140 312 138 286
+                 C 142 258 144 228 146 196
+                 C 148 168 150 142 154 122
+                 C 164 140 168 162 168 186
+                 C 168 210 164 234 156 252
+                 C 164 256 170 252 172 242
+                 C 178 222 180 198 178 172
+                 C 176 146 170 122 160 104
+                 C 150 88 134 78 122 74
+                 C 118 72 114 72 110 72
+                 C 106 72 102 72 98 74 Z"/>
+          </g>
+
+          <g id="LeftArm"></g>
+          <g id="RightArm"></g>
+          <g id="LeftLeg"></g>
+          <g id="RightLeg"></g>
+
+          <!-- Âncoras -->
+          <g id="Anchors">
+            <circle cx="64" cy="130" r="4" fill="#C7A25A"/>
+            <circle cx="156" cy="130" r="4" fill="#C7A25A"/>
+            <circle cx="110" cy="205" r="4" fill="#C7A25A"/>
+            <circle cx="86" cy="350" r="4" fill="#C7A25A"/>
+            <circle cx="134" cy="350" r="4" fill="#C7A25A"/>
+          </g>
+
+          <!-- Linhas em L (leader lines) -->
+          <g id="Callouts" fill="none" stroke="#C7A25A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+            <path d="M 18 110 L 44 110 L 64 130"/>
+            <path d="M 202 110 L 176 110 L 156 130"/>
+            <path d="M 18 350 L 56 350 L 86 350"/>
+            <path d="M 202 350 L 164 350 L 134 350"/>
+          </g>
+        </svg>
+
+        <div class="trunk-label">
+          <b>18.5 kg</b>
+          <div class="pct">18.7%</div>
+        </div>
+      </div>
+
+      <div class="col right">
+        <div class="metric">
+          <b>2.1 kg</b>
+          <span class="pct">15.8%</span>
+          <span class="side">(D)</span>
+        </div>
+        <div class="metric">
+          <b>6.7 kg</b>
+          <span class="pct">21.6%</span>
+          <span class="side">(D)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="note">Prévia isolada — BodySilhouette (SVG puro). Não integrado ao projeto.</p>
+</div>
+</body>
+</html>

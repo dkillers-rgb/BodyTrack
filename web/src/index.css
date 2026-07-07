@@ -178,3 +178,26 @@ th {
 tr:hover td {
   background: var(--surface-hover);
 }
+
+@media print {
+  .sidebar,
+  .no-print {
+    display: none !important;
+  }
+
+  .layout {
+    display: block;
+  }
+
+  .main-content {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .printable-report {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}

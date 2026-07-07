@@ -17,9 +17,15 @@ export default function ReportsPage() {
 
   if (loading) return <div className="loading">Carregando...</div>;
 
-  const filteredClients = clients.filter((c) =>
-    c.name.toLowerCase().includes(query.trim().toLowerCase())
-  );
+  const filteredClients = clients.filter((c) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.externalId.toLowerCase().includes(q) ||
+      (c.phone?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   return (
     <div>
@@ -53,7 +59,7 @@ export default function ReportsPage() {
           <Link key={c.id} to={`/clients/${c.id}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
             <h3 style={{ marginBottom: 8 }}>{c.name}</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              {c._count.evaluations} avaliação(ões)
+              ID {c.externalId} · {c._count.evaluations} avaliação(ões)
               {c.evaluations[0] && (
                 <> · Último exame: {new Date(c.evaluations[0].examDate).toLocaleDateString('pt-BR')}</>
               )}

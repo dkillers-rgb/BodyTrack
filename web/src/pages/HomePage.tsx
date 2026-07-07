@@ -19,11 +19,11 @@ export default function HomePage() {
   return (
     <div>
       <div className="page-header">
-        <h1>Dashboard</h1>
+        <h1>BodyTrack</h1>
         <p>Visão geral das avaliações corporais</p>
       </div>
 
-      <div className="grid-3" style={{ marginBottom: 32 }}>
+      <div className="grid-3" style={{ marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-value">{overview?.totalClients ?? 0}</div>
           <div className="stat-label">Clientes cadastrados</div>
@@ -32,9 +32,24 @@ export default function HomePage() {
           <div className="stat-value">{overview?.totalEvaluations ?? 0}</div>
           <div className="stat-label">Avaliações realizadas</div>
         </div>
-        <Link to="/scan" className="stat-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-          <div className="stat-value">📷</div>
-          <div className="stat-label">Nova leitura de QR Code</div>
+        <Link to="/manual-entry" className="stat-card" style={{ textDecoration: 'none' }}>
+          <div className="stat-value">+</div>
+          <div className="stat-label">Nova avaliação</div>
+        </Link>
+      </div>
+
+      <div className="grid-3" style={{ marginBottom: 32 }}>
+        <Link to="/scan" className="card" style={{ textDecoration: 'none' }}>
+          <h3 className="card-title">Ler QR Code</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Escanear relatório do equipamento</p>
+        </Link>
+        <Link to="/clients" className="card" style={{ textDecoration: 'none' }}>
+          <h3 className="card-title">Clientes</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Cadastro e edição</p>
+        </Link>
+        <Link to="/reports" className="card" style={{ textDecoration: 'none' }}>
+          <h3 className="card-title">Relatórios</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Ver relatórios Bodbody</p>
         </Link>
       </div>
 
@@ -42,8 +57,7 @@ export default function HomePage() {
         <h3 className="card-title">Avaliações recentes</h3>
         {overview?.recentEvaluations.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>
-            Nenhuma avaliação ainda.{' '}
-            <Link to="/scan">Faça a primeira leitura</Link>.
+            Nenhuma avaliação ainda. <Link to="/scan">Faça a primeira leitura</Link>.
           </p>
         ) : (
           <table>

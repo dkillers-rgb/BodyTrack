@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../lib/auth';
 import { generateEvolutionAnalysis, generateLocalAnalysis } from '../services/aiService';
+import { buildBodbodyReportFromEvaluation } from '../services/bodbodyReportMapper';
 import { parseClientId } from '../lib/parseId';
 import { asyncHandler } from '../lib/asyncHandler';
 
@@ -34,17 +35,40 @@ router.get('/client/:clientId', asyncHandler(async (req: Request, res: Response)
   const openAiAnalysis = await generateEvolutionAnalysis(client.name, client.evaluations);
   if (openAiAnalysis) analysis = openAiAnalysis;
 
+  const bodbodyReport = latest
+    ? buildBodbodyReportFromEvaluation(
+        {
+          id: client.id,
+          name: client.name,
+          gender: client.gender,
+          age: client.age,
+          height: client.height,
+        },
+        {
+          examDate: latest.examDate.toISOString(),
+          weight: latest.weight,
+          skeletalMuscle: latest.skeletalMuscle,
+          bodyFat: latest.bodyFat,
+          visceralFat: latest.visceralFat ?? undefined,
+        },
+        latest.rawReportJson ?? undefined
+      )
+    : undefined;
+
   res.json({
     client: {
       id: client.id,
+      externalId: client.externalId?.trim() || String(client.id),
       name: client.name,
       gender: client.gender,
       age: client.age,
       height: client.height,
+      phone: client.phone?.trim() || undefined,
     },
     evaluations: client.evaluations,
     chartData,
     analysis,
+    bodbodyReport,
     summary: {
       totalEvaluations: client.evaluations.length,
       latestWeight: latest?.weight,

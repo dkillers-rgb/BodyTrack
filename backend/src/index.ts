@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
 import evaluationRoutes from './routes/evaluations';
 import reportRoutes from './routes/reports';
+import externalReportRoutes from './routes/externalReport';
 
 // Check desktop mode BEFORE loading dotenv, so we can decide which .env to use
 const isDesktopMode = process.env.BODYTRACK_DESKTOP === '1' || process.env.ELECTRON_RUN_AS_NODE === '1';
@@ -99,6 +100,8 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'BodyTrack API' });
 });
 
+app.use('/report', externalReportRoutes);
+
 // Middleware para detectar erros de Prisma relacionados a DATABASE_URL
 app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (err?.message?.includes('Error validating datasource')) {
@@ -145,8 +148,12 @@ process.on('uncaughtException', (error) => {
 });
 
 applyMigrations().then(() => {
-  app.listen(PORT, '127.0.0.1', () => {
-    console.log(`BodyTrack API rodando em http://127.0.0.1:${PORT}`);
+  const HOST = process.env.HOST || '0.0.0.0';
+  app.listen(PORT, HOST, () => {
+    console.log(`BodyTrack API rodando em http://${HOST}:${PORT}`);
+    if (HOST === '0.0.0.0') {
+      console.log('Acesso na rede local: use o IP do PC na porta', PORT);
+    }
     if (!process.env.DATABASE_URL) {
       console.warn('⚠️  AVISO: DATABASE_URL não está definido');
     }

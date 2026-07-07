@@ -7,8 +7,7 @@
   "main": "electron/main.js",
   "workspaces": [
     "backend",
-    "web",
-    "mobile"
+    "web"
   ],
   "scripts": {
     "build": "npm run build:web",
@@ -18,11 +17,13 @@
     "desktop:build": "npm run build:backend && npm run build:web && electron-builder",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:web": "npm run dev --workspace=web",
+    "dev:web:lan": "npm run dev:lan --workspace=web",
+    "dev:web:lan:https": "npm run dev:lan:https --workspace=web",
     "build:backend": "npm run build --workspace=backend",
     "build:web": "npm run build --workspace=web",
     "build:mobile": "npm run mobile:prebuild",
-    "mobile:prebuild": "cd mobile && npx expo prebuild --platform android --no-install",
-    "mobile:android": "cd mobile && npm run android",
+    "mobile:prebuild": "cd mobile && npx expo prebuild --platform android --clean",
+    "mobile:apk": "cd mobile && npm run android:apk",
     "cap:init": "npx cap init BodyTrack com.bodytrack.mobile --web-dir=web/dist",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npm run build:web && npx cap sync",

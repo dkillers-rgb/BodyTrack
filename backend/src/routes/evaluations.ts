@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../lib/auth';
 import { processReportOcr, downloadImageFromUrl } from '../services/ocrService';
+import { extractKeyFromQrUrl, fetchTcyReportByKey } from '../services/tcyReportService';
+import { mapCodeValueToBodbodyReport } from '../services/bodbodyReportMapper';
 import { generateEvolutionAnalysis, generateLocalAnalysis } from '../services/aiService';
 import { parseClientId } from '../lib/parseId';
 import { asyncHandler } from '../lib/asyncHandler';
@@ -43,6 +45,8 @@ const evaluationSchema = z.object({
   weight: z.number().positive(),
   skeletalMuscle: z.number().nonnegative(),
   bodyFat: z.number().nonnegative(),
+  visceralFat: z.number().nonnegative().optional(),
+  rawReportJson: z.string().optional(),
 });
 
 function formatValidationError(error: z.ZodError): string {
@@ -79,6 +83,32 @@ router.post('/scan-qr', asyncHandler(async (req: Request, res: Response) => {
   const { url } = req.body;
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'URL do relatório é obrigatória' });
+  }
+
+  const key = extractKeyFromQrUrl(url);
+  if (key) {
+    const tcy = await fetchTcyReportByKey(key);
+    const bodbodyReport = mapCodeValueToBodbodyReport(tcy.rawCodeValue);
+    return res.json({
+      preview: {
+        patient: {},
+        muscleFat: {
+          weight: tcy.peso,
+          skeletalMuscle: tcy.massaMuscularEsqueletica,
+          bodyFat: tcy.gorduraCorporal,
+          visceralFat: tcy.gorduraVisceral,
+        },
+      },
+      bodbodyReport,
+      rawCodeValue: tcy.rawCodeValue,
+      report: {
+        peso: tcy.peso,
+        massaMuscularEsqueletica: tcy.massaMuscularEsqueletica,
+        gorduraCorporal: tcy.gorduraCorporal,
+        gorduraVisceral: tcy.gorduraVisceral,
+      },
+      ocr: { rawText: 'Dados extraídos via API TCY.' },
+    });
   }
 
   const imageBuffer = await downloadImageFromUrl(url);
@@ -123,9 +153,10 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   try {
-    const { clientId, examDate, weight, skeletalMuscle, bodyFat } = parsed.data;
+    const { clientId, examDate, weight, skeletalMuscle, bodyFat, visceralFat } = parsed.data;
     const imagePath = req.body.imagePath as string | undefined;
     const rawOcrText = req.body.rawOcrText as string | undefined;
+    const rawReportJson = parsed.data.rawReportJson;
 
     const client = await prisma.client.findFirst({
       where: { id: clientId, userId: req.user!.userId },
@@ -139,8 +170,10 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
         weight,
         skeletalMuscle,
         bodyFat,
+        visceralFat: visceralFat ?? null,
         imagePath,
         rawOcrText,
+        rawReportJson,
       },
     });
 

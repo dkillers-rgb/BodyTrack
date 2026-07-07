@@ -1,22 +1,67 @@
-const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
 const apiPort = import.meta.env.VITE_API_PORT || '3001';
-const baseUrl = rawApiUrl.replace(/\/+$/, '');
-let API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
-try {
-    if (rawApiUrl === '/api' && typeof window !== 'undefined') {
-      const host = window.location.hostname || '';
-      if (window.location.protocol === 'file:' || !host) {
-        API_URL = `http://127.0.0.1:${apiPort}/api`;
-      } else if (host.includes('vercel.app')) {
-        API_URL = 'https://bodytrack-ph0z.onrender.com/api';
-      } else if (host === 'localhost' || host.startsWith('127.0.0.1')) {
-        API_URL = `http://127.0.0.1:${apiPort}/api`;
-      }
-    }
-} catch (e) {
-  // ignore
+function isPrivateLanHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]' ||
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)
+  );
 }
+
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+}
+
+export function resolveApiUrl(): string {
+  const configured = import.meta.env.VITE_API_URL as string | undefined;
+
+  if (configured && configured !== '/api') {
+    const trimmed = configured.replace(/\/+$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+
+  if (typeof window === 'undefined') {
+    return '/api';
+  }
+
+  const { protocol, hostname, port } = window.location;
+
+  if (protocol === 'file:' || !hostname) {
+    return `http://127.0.0.1:${apiPort}/api`;
+  }
+
+  if (hostname.includes('vercel.app')) {
+    return 'https://bodytrack-ph0z.onrender.com/api';
+  }
+
+  const onViteDev = port === '5173' || port === '4173';
+  const onLan = isPrivateLanHost(hostname) && !isLoopbackHost(hostname);
+
+  // Dev/preview Vite: sempre proxy /api (mesma origem — evita bloqueio da porta 3001 no celular).
+  if (onViteDev) {
+    return '/api';
+  }
+
+  // HTTP na rede local sem Vite (build estático): backend direto no IP do PC.
+  if (protocol === 'http:' && onLan) {
+    return `http://${hostname}:${apiPort}/api`;
+  }
+
+  if (protocol === 'https:' && onLan) {
+    return '/api';
+  }
+
+  if (isLoopbackHost(hostname)) {
+    return `http://127.0.0.1:${apiPort}/api`;
+  }
+
+  return '/api';
+}
+
+const API_URL = resolveApiUrl();
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -28,7 +73,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const response = await fetch(`${API_URL}${normalizedPath}`, { ...options, headers });
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${normalizedPath}`, { ...options, headers });
+  } catch {
+    throw new Error(
+      'Sem conexão com o servidor. Confirme que o backend está rodando no PC (npm run dev no backend).'
+    );
+  }
 
   if (response.status === 401) {
     throw new Error('Sessão expirada');
@@ -110,18 +163,22 @@ export interface User {
 
 export interface Client {
   id: number;
+  externalId: string;
   name: string;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   age: number;
   height: number;
+  phone?: string;
   createdAt: string;
 }
 
 export interface ClientInput {
+  externalId: string;
   name: string;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   age: number;
   height: number;
+  phone?: string;
 }
 
 export interface Evaluation {
@@ -131,7 +188,10 @@ export interface Evaluation {
   weight: number;
   skeletalMuscle: number;
   bodyFat: number;
+  visceralFat?: number;
   imagePath?: string;
+  rawOcrText?: string;
+  rawReportJson?: string;
   aiAnalysis?: string;
   client?: Client;
 }
@@ -142,12 +202,14 @@ export interface EvaluationInput {
   weight: number;
   skeletalMuscle: number;
   bodyFat: number;
+  visceralFat?: number;
   imagePath?: string;
   rawOcrText?: string;
+  rawReportJson?: string;
 }
 
 export interface OcrPreview {
-  imagePath: string;
+  imagePath?: string;
   preview: {
     patient: {
       examDate?: string;
@@ -156,8 +218,11 @@ export interface OcrPreview {
       weight?: number;
       skeletalMuscle?: number;
       bodyFat?: number;
+      visceralFat?: number;
     };
   };
+  bodbodyReport?: import('../types/bodbodyReportTypes').BodbodyReportSnapshot;
+  rawCodeValue?: string;
   ocr: { rawText: string };
 }
 
@@ -182,6 +247,7 @@ export interface ClientDashboard {
   evaluations: Evaluation[];
   chartData: ChartPoint[];
   analysis: string;
+  bodbodyReport?: import('../types/bodbodyReportTypes').BodbodyReportSnapshot;
   summary: {
     totalEvaluations: number;
     latestWeight?: number;

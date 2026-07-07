@@ -1,24 +1,15 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Outlet, NavLink } from 'react-router-dom';
 import './Layout.css';
 
 const navItems = [
   { to: '/', label: 'Início', icon: '🏠' },
-  { to: '/scan', label: 'Ler QR Code', icon: '📷' },
-  { to: '/history', label: 'Histórico', icon: '📋' },
   { to: '/clients', label: 'Clientes', icon: '👥' },
+  { to: '/history', label: 'Avaliações', icon: '📋' },
   { to: '/reports', label: 'Relatórios', icon: '📊' },
+  { to: '/more', label: 'Mais', icon: '⋯' },
 ];
 
 export default function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -40,13 +31,9 @@ export default function Layout() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="user-info">
-            <span className="user-name">{user?.name}</span>
-            <span className="user-email">{user?.email}</span>
-          </div>
-          <button className="btn-secondary logout-btn" onClick={handleLogout}>
-            Sair
-          </button>
+          <NavLink to="/scan" className="btn-primary" style={{ display: 'block', textAlign: 'center' }}>
+            Ler QR Code
+          </NavLink>
         </div>
       </aside>
       <main className="main-content">

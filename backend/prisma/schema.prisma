@@ -27,18 +27,21 @@ enum Role {
 }
 
 model Client {
-  id        Int      @id @default(autoincrement())
-  name      String
-  gender    Gender
-  age       Int
-  height    Float
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  userId    String   @map("user_id")
+  id         Int      @id @default(autoincrement())
+  externalId String   @map("external_id")
+  name       String
+  gender     Gender
+  age        Int
+  height     Float
+  phone      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  userId     String   @map("user_id")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   evaluations  Evaluation[]
 
+  @@unique([userId, externalId])
   @@map("clients")
 }
 
@@ -55,8 +58,10 @@ model Evaluation {
   weight         Float
   skeletalMuscle Float    @map("skeletal_muscle")
   bodyFat        Float    @map("body_fat")
+  visceralFat    Float?   @map("visceral_fat")
   imagePath      String?  @map("image_path")
   rawOcrText     String?  @map("raw_ocr_text")
+  rawReportJson  String?  @map("raw_report_json")
   aiAnalysis     String?  @map("ai_analysis")
   createdAt      DateTime @default(now()) @map("created_at")
 
