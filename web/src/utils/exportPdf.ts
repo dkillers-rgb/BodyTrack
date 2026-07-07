@@ -82,20 +82,85 @@ export async function exportDashboardToPdf(data: ClientDashboard, filename: stri
   pdf.save(filename);
 }
 
+function writeHtmlDocument(target: Document, html: string): void {
+  target.open();
+  target.write(html);
+  target.close();
+}
+
+function printHtmlDocument(html: string): void {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('title', 'Impressão do relatório');
+  iframe.style.position = 'fixed';
+  iframe.style.top = '0';
+  iframe.style.left = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.opacity = '0';
+  iframe.style.pointerEvents = 'none';
+  document.body.appendChild(iframe);
+
+  const win = iframe.contentWindow;
+  const doc = iframe.contentDocument;
+  if (!win || !doc) {
+    document.body.removeChild(iframe);
+    openPrintWithBlobUrl(html);
+    return;
+  }
+
+  writeHtmlDocument(doc, html);
+
+  const cleanup = () => {
+    if (iframe.parentNode) {
+      document.body.removeChild(iframe);
+    }
+  };
+
+  const triggerPrint = () => {
+    try {
+      win.focus();
+      win.print();
+    } catch {
+      cleanup();
+      openPrintWithBlobUrl(html);
+      return;
+    }
+
+    win.addEventListener('afterprint', cleanup, { once: true });
+    setTimeout(cleanup, 60_000);
+  };
+
+  setTimeout(triggerPrint, 350);
+}
+
+function openPrintWithBlobUrl(html: string): void {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+
+  if (!win) {
+    URL.revokeObjectURL(url);
+    throw new Error('Não foi possível abrir a impressão. Permita pop-ups ou use Exportar PDF.');
+  }
+
+  const revoke = () => URL.revokeObjectURL(url);
+  win.addEventListener('load', () => {
+    try {
+      win.focus();
+      win.print();
+    } finally {
+      revoke();
+    }
+  }, { once: true });
+
+  setTimeout(revoke, 120_000);
+}
+
 export function printDashboardReport(data: ClientDashboard): void {
   const company = loadCompanySettings();
   const html = buildBodbodyReportHtml(data, company, { theme: 'print' });
-  const win = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1200');
-  if (!win) {
-    throw new Error('Permita pop-ups para imprimir o relatório.');
-  }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  win.onload = () => {
-    win.print();
-  };
+  printHtmlDocument(html);
 }
 
 /** @deprecated Use exportDashboardToPdf — captura de DOM quebra o layout do relatório. */
