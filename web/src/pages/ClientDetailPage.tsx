@@ -16,6 +16,7 @@ export default function ClientDetailPage() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportNotice, setExportNotice] = useState('');
   const reportRef = useRef<HTMLDivElement>(null);
 
   const loadData = () => {
@@ -77,10 +78,15 @@ export default function ClientDetailPage() {
     if (!data) return;
     setExportingPdf(true);
     setError('');
+    setExportNotice('');
     try {
       const slug = data.client.externalId || String(data.client.id);
-      await exportDashboardToPdf(data, `relatorio-${slug}.pdf`);
+      const result = await exportDashboardToPdf(data, `relatorio-${slug}.pdf`);
+      if (result === 'downloaded') {
+        setExportNotice('PDF baixado. No PC, anexe o arquivo no WhatsApp Web se quiser enviar.');
+      }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       setError(err instanceof Error ? err.message : 'Erro ao gerar PDF');
     } finally {
       setExportingPdf(false);
@@ -120,7 +126,7 @@ export default function ClientDetailPage() {
         {!editing && (
           <div className="page-header-actions">
             <button className="btn-primary" onClick={handleExportPdf} disabled={exportingPdf}>
-              {exportingPdf ? 'Gerando PDF...' : 'Exportar PDF'}
+              {exportingPdf ? 'Preparando...' : 'Compartilhar'}
             </button>
             <button className="btn-secondary" onClick={handlePrint}>
               Imprimir
@@ -133,6 +139,7 @@ export default function ClientDetailPage() {
       </div>
 
       {error && !editing && <p className="error no-print" style={{ marginBottom: 16 }}>{error}</p>}
+      {exportNotice && !editing && <p className="success no-print" style={{ marginBottom: 16 }}>{exportNotice}</p>}
 
       {editing && (
         <div className="card no-print" style={{ marginBottom: 24 }}>

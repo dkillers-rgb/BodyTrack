@@ -73,13 +73,40 @@ function addCanvasToPdf(pdf: jsPDF, canvas: HTMLCanvasElement): void {
   }
 }
 
-export async function exportDashboardToPdf(data: ClientDashboard, filename: string): Promise<void> {
+function buildPdfFromCanvas(canvas: HTMLCanvasElement): jsPDF {
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  addCanvasToPdf(pdf, canvas);
+  return pdf;
+}
+
+async function shareOrDownloadPdf(
+  pdf: jsPDF,
+  filename: string,
+  clientName: string
+): Promise<'shared' | 'downloaded'> {
+  const blob = pdf.output('blob');
+  const file = new File([blob], filename, { type: 'application/pdf' });
+  const title = `Relatório — ${clientName}`;
+  const text = `Relatório de composição corporal — ${clientName}`;
+
+  if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ files: [file], title, text });
+    return 'shared';
+  }
+
+  pdf.save(filename);
+  return 'downloaded';
+}
+
+export async function exportDashboardToPdf(
+  data: ClientDashboard,
+  filename: string
+): Promise<'shared' | 'downloaded'> {
   const company = loadCompanySettings();
   const html = buildBodbodyReportHtml(data, company, { theme: 'screen' });
   const canvas = await renderHtmlToCanvas(html);
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  addCanvasToPdf(pdf, canvas);
-  pdf.save(filename);
+  const pdf = buildPdfFromCanvas(canvas);
+  return shareOrDownloadPdf(pdf, filename, data.client.name);
 }
 
 function writeHtmlDocument(target: Document, html: string): void {
