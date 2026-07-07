@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, ClientDashboard, ClientInput } from '../services/api';
-import EvolutionChart from '../components/EvolutionChart';
 import ClientReport from '../components/ClientReport';
 import { exportDashboardToPdf, printDashboardReport } from '../utils/exportPdf';
 
@@ -17,7 +16,6 @@ export default function ClientDetailPage() {
   const [saving, setSaving] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportNotice, setExportNotice] = useState('');
-  const reportRef = useRef<HTMLDivElement>(null);
 
   const loadData = () => {
     if (!id) return;
@@ -105,7 +103,7 @@ export default function ClientDetailPage() {
   if (loading) return <div className="loading">Carregando...</div>;
   if (!data) return <div className="error">Cliente não encontrado</div>;
 
-  const { client, evaluations, chartData, analysis, summary } = data;
+  const { client, evaluations, analysis, summary } = data;
 
   return (
     <div className="client-detail-page">
@@ -214,12 +212,8 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      <div className="no-print" style={{ marginBottom: 24 }}>
-        <EvolutionChart data={chartData} />
-      </div>
-
       <div className="card printable-report" style={{ marginBottom: 24 }}>
-        <ClientReport ref={reportRef} data={data} />
+        <ClientReport data={data} />
       </div>
 
       <div className="card no-print">
