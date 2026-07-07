@@ -8,6 +8,7 @@
     "dev:lan": "vite --host 0.0.0.0 --port 5173",
     "dev:lan:https": "vite --host 0.0.0.0 --port 5173 --config vite.config.https.ts",
     "build": "tsc -b && vite build",
+    "vercel-build": "npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
