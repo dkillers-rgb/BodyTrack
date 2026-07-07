@@ -40,10 +40,11 @@ console.log('dotenv result:', {
 });
 console.log('AFTER manual override - process.env.DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 60));
 
-// Override DATABASE_URL for desktop/local mode AFTER dotenv loads
-const defaultDbPath = path.resolve(__dirname, '..', 'dev.db');
-if (isDesktopMode) {
-  process.env.DATABASE_URL = `file:${defaultDbPath}`;
+// Desktop mode: DATABASE_URL must be set in .env (PostgreSQL).
+if (isDesktopMode && !process.env.DATABASE_URL) {
+  console.warn(
+    '⚠️  DATABASE_URL não definido no modo desktop. Configure PostgreSQL em backend/.env'
+  );
 }
 process.env.UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'bodytrack-local-secret';
@@ -98,6 +99,14 @@ app.use('/uploads', express.static(path.resolve(process.env.UPLOAD_DIR || './upl
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'BodyTrack API' });
+});
+
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'BodyTrack API',
+    health: '/health',
+    api: '/api',
+  });
 });
 
 app.use('/report', externalReportRoutes);
