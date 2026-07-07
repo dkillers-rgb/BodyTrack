@@ -106,14 +106,15 @@ export default function ClientDetailPage() {
       <div className="page-header no-print page-header-row">
         <div>
           <h1>{client.name}</h1>
-          <p>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <p className="client-meta-line">
+            <span>
               ID: <code>{client.externalId}</code>
             </span>
-            {' · '}
-            {client.gender === 'MALE' ? 'Masculino' : client.gender === 'FEMALE' ? 'Feminino' : 'Outro'}
-            {' · '}{client.age} anos · {client.height} cm
-            {client.phone ? ` · ${client.phone}` : ''}
+            <span>
+              {client.gender === 'MALE' ? 'Masculino' : client.gender === 'FEMALE' ? 'Feminino' : 'Outro'}
+              {' · '}{client.age} anos · {client.height} cm
+              {client.phone ? ` · ${client.phone}` : ''}
+            </span>
           </p>
         </div>
         {!editing && (
@@ -168,7 +169,7 @@ export default function ClientDetailPage() {
               </div>
             </div>
             {error && <p className="error">{error}</p>}
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={saving}>
                 {saving ? 'Salvando...' : 'Salvar alterações'}
               </button>
@@ -216,6 +217,7 @@ export default function ClientDetailPage() {
 
       <div className="card no-print">
         <h3 className="card-title">Histórico de avaliações</h3>
+        <div className="table-wrap">
         <table>
           <thead>
             <tr>
@@ -238,6 +240,7 @@ export default function ClientDetailPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

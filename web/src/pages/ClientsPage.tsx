@@ -124,14 +124,16 @@ export default function ClientsPage() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="page-header page-header-row">
         <div>
           <h1>Clientes</h1>
           <p>Gerencie o cadastro de clientes</p>
         </div>
-        <button className="btn-primary" onClick={() => (showForm && !editingId ? cancelForm() : openCreateForm())}>
-          {showForm && !editingId ? 'Cancelar' : '+ Novo cliente'}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => (showForm && !editingId ? cancelForm() : openCreateForm())}>
+            {showForm && !editingId ? 'Cancelar' : '+ Novo cliente'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -174,7 +176,7 @@ export default function ClientsPage() {
               </div>
             </div>
             {error && <p className="error">{error}</p>}
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="form-actions">
               <button type="submit" className="btn-primary">
                 {editingId ? 'Salvar alterações' : 'Salvar'}
               </button>
@@ -201,7 +203,40 @@ export default function ClientsPage() {
         )}
       </div>
 
-      <div className="card">
+      <div className="mobile-only list-stack">
+        {filteredClients.map((c) => (
+          <article key={c.id} className="list-card">
+            <div className="list-card-header">
+              <Link to={`/clients/${c.id}`}>
+                <strong>{c.name}</strong>
+              </Link>
+              <code>ID {c.externalId}</code>
+            </div>
+            <div className="list-card-meta">
+              <span>{c.phone || 'Sem telefone'}</span>
+              <span>{c.gender === 'MALE' ? 'M' : c.gender === 'FEMALE' ? 'F' : '—'}</span>
+              <span>{c.age} anos</span>
+              <span>{c.height} cm</span>
+              <span className="badge">{c._count.evaluations} aval.</span>
+              {c.evaluations[0] && <span>Último: {c.evaluations[0].weight} kg</span>}
+            </div>
+            <div className="list-card-actions">
+              <button type="button" className="btn-secondary" onClick={() => openEditForm(c)}>
+                Editar
+              </button>
+              <button type="button" className="btn-danger" onClick={() => handleDelete(c.id)}>
+                Excluir
+              </button>
+            </div>
+          </article>
+        ))}
+        {clients.length === 0 && (
+          <p style={{ color: 'var(--text-muted)', padding: 20, textAlign: 'center' }}>Nenhum cliente cadastrado.</p>
+        )}
+      </div>
+
+      <div className="card desktop-only">
+        <div className="table-wrap">
         <table>
           <thead>
             <tr>
@@ -241,6 +276,7 @@ export default function ClientsPage() {
             ))}
           </tbody>
         </table>
+        </div>
         {clients.length === 0 && (
           <p style={{ color: 'var(--text-muted)', padding: 20, textAlign: 'center' }}>Nenhum cliente cadastrado.</p>
         )}

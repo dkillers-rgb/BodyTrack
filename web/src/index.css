@@ -222,11 +222,117 @@ tr:hover td {
     min-width: 0;
   }
 
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+  .client-meta-line {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
   th,
   td {
     padding: 10px 12px;
     font-size: 0.85rem;
   }
+}
+
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.list-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.list-card-header strong {
+  font-size: 1rem;
+}
+
+.list-card-header code {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.list-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.list-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.list-card-actions button {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.client-meta-line {
+  color: var(--text-muted);
 }
 
 @media print {

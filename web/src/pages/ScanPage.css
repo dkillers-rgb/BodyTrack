@@ -2,6 +2,21 @@
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .scan-modes {
+    flex-direction: column;
+  }
+
+  .scan-modes button {
+    width: 100%;
+  }
+
+  .scan-area {
+    padding: 20px 16px;
+  }
 }
 
 .scan-area {

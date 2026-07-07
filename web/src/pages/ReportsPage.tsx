@@ -65,7 +65,7 @@ export default function ReportsPage() {
               )}
             </p>
             {c.evaluations[0] && (
-              <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+              <div className="badge-row">
                 <span className="badge badge-success">Peso: {c.evaluations[0].weight} kg</span>
                 <span className="badge">Músculo: {c.evaluations[0].skeletalMuscle} kg</span>
                 <span className="badge">Gordura: {c.evaluations[0].bodyFat} kg</span>

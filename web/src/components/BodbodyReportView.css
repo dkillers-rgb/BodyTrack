@@ -242,10 +242,44 @@
   border-radius: 2px;
 }
 
+.printable-report {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (max-width: 900px) {
-  .bb-header { grid-template-columns: 1fr; }
-  .bb-header-title { text-align: left; }
-  .bb-header-divider { display: none; }
-  .bb-comp-grid { grid-template-columns: repeat(2, 1fr); }
-  .bb-row3, .bb-row2 { grid-template-columns: 1fr; }
+  .printable-report {
+    margin-left: -4px;
+    margin-right: -4px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .printable-report .bb-report {
+    border-radius: 8px;
+    min-width: 320px;
+  }
+
+  .bb-header {
+    grid-template-columns: 1fr;
+  }
+
+  .bb-header-title {
+    text-align: left;
+  }
+
+  .bb-header-divider {
+    display: none;
+  }
+
+  .bb-comp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bb-row3,
+  .bb-row2 {
+    grid-template-columns: 1fr;
+  }
 }
