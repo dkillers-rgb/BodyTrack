@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { api, ClientDashboard, ClientInput } from '../services/api';
 import EvolutionChart from '../components/EvolutionChart';
 import ClientReport from '../components/ClientReport';
-import { exportElementToPdf } from '../utils/exportPdf';
+import { exportDashboardToPdf, printDashboardReport } from '../utils/exportPdf';
 
 const emptyForm: ClientInput = { externalId: '', name: '', gender: 'MALE', age: 0, height: 0, phone: '' };
 
@@ -74,12 +74,12 @@ export default function ClientDetailPage() {
   };
 
   const handleExportPdf = async () => {
-    if (!reportRef.current || !data) return;
+    if (!data) return;
     setExportingPdf(true);
     setError('');
     try {
       const slug = data.client.externalId || String(data.client.id);
-      await exportElementToPdf(reportRef.current, `relatorio-${slug}.pdf`);
+      await exportDashboardToPdf(data, `relatorio-${slug}.pdf`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao gerar PDF');
     } finally {
@@ -88,7 +88,12 @@ export default function ClientDetailPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (!data) return;
+    try {
+      printDashboardReport(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao imprimir');
+    }
   };
 
   if (loading) return <div className="loading">Carregando...</div>;

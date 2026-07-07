@@ -33,4 +33,7 @@ export const REPORT_LABELS = {
   score: 'Pontuação Geral',
   sideLeft: '(E)',
   sideRight: '(D)',
+  chartWeight: 'Peso (kg)',
+  chartMuscle: 'Massa Muscular Esquelética (kg)',
+  chartFat: 'Percentual de Gordura Corporal (%)',
 } as const;
