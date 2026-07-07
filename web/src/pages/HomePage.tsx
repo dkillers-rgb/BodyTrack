@@ -60,6 +60,7 @@ export default function HomePage() {
             Nenhuma avaliação ainda. <Link to="/scan">Faça a primeira leitura</Link>.
           </p>
         ) : (
+          <div className="table-wrap">
           <table>
             <thead>
               <tr>
@@ -84,6 +85,7 @@ export default function HomePage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

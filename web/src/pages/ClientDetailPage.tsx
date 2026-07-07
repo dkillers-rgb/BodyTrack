@@ -103,7 +103,7 @@ export default function ClientDetailPage() {
 
   return (
     <div className="client-detail-page">
-      <div className="page-header no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header no-print page-header-row">
         <div>
           <h1>{client.name}</h1>
           <p>
@@ -117,7 +117,7 @@ export default function ClientDetailPage() {
           </p>
         </div>
         {!editing && (
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="page-header-actions">
             <button className="btn-primary" onClick={handleExportPdf} disabled={exportingPdf}>
               {exportingPdf ? 'Gerando PDF...' : 'Exportar PDF'}
             </button>

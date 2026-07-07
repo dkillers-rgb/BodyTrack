@@ -3,10 +3,12 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .clients-search input {
   flex: 1;
+  min-width: 0;
   max-width: 480px;
 }
 
