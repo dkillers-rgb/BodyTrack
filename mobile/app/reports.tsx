@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { api, Client, Overview } from '../services/api';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { api, Client, Evaluation, Overview } from '../services/api';
 import BottomNavigation from '../components/home/BottomNavigation';
 
 function bodyFatPercent(weight: number, bodyFat: number): string {
@@ -20,19 +20,36 @@ function bodyFatPercent(weight: number, bodyFat: number): string {
 export default function ReportsScreen() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [latestByClient, setLatestByClient] = useState<Record<number, Evaluation>>({});
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    Promise.all([api.reports.overview(), api.clients.list()])
-      .then(([ov, cl]) => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setLoadError(null);
+    Promise.all([api.reports.overview(), api.clients.list(), api.reports.latestByClient()])
+      .then(([ov, cl, latest]) => {
         setOverview(ov);
         setClients(cl);
+        setLatestByClient(latest);
       })
-      .catch(console.error)
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : 'Não foi possível carregar relatórios.');
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const filteredClients = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -50,74 +67,92 @@ export default function ReportsScreen() {
 
   return (
     <View style={styles.screen}>
-    <View style={styles.container}>
-      <Text style={styles.title}>Relatórios</Text>
-      <Text style={styles.subtitle}>Selecione um cliente para ver o relatório completo</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Relatórios</Text>
+        <Text style={styles.subtitle}>Selecione um cliente para ver o relatório completo</Text>
 
-      <View style={styles.cardsRow}>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Clientes</Text>
-          <Text style={styles.cardValue}>{overview?.totalClients ?? 0}</Text>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Avaliações</Text>
-          <Text style={styles.cardValue}>{overview?.totalEvaluations ?? 0}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.filterLabel}>Buscar por nome</Text>
-      <TextInput
-        style={styles.search}
-        placeholder="Digite o nome do cliente..."
-        placeholderTextColor="#8b9cb3"
-        value={query}
-        onChangeText={setQuery}
-      />
-      {query.trim().length > 0 && (
-        <Text style={styles.filterCount}>
-          {filteredClients.length} cliente{filteredClients.length !== 1 ? 's' : ''} encontrado{filteredClients.length !== 1 ? 's' : ''}
-        </Text>
-      )}
-
-      <FlatList
-        data={filteredClients}
-        keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={
-          <Text style={styles.empty}>
-            {clients.length === 0
-              ? 'Cadastre clientes e realize avaliações para gerar relatórios.'
-              : 'Nenhum cliente encontrado.'}
-          </Text>
-        }
-        renderItem={({ item }) => {
-          const latestEval = overview?.recentEvaluations.find((e) => e.clientId === item.id);
-          return (
-            <TouchableOpacity
-              style={styles.clientCard}
-              onPress={() => router.push(`/client/${item.id}` as never)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.clientName}>{item.name}</Text>
-              <Text style={styles.clientMeta}>
-                {item.gender === 'MALE' ? 'Masculino' : item.gender === 'FEMALE' ? 'Feminino' : 'Outro'}
-                {' · '}{item.age} anos · {item.height} cm
-              </Text>
-              {latestEval && (
-                <View style={styles.badges}>
-                  <Text style={styles.badge}>Peso: {latestEval.weight} kg</Text>
-                  <Text style={styles.badge}>Músculo: {latestEval.skeletalMuscle} kg</Text>
-                  <Text style={styles.badge}>
-                    Gordura: {bodyFatPercent(latestEval.weight, latestEval.bodyFat)}
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.tapHint}>Toque para abrir relatório →</Text>
+        {loadError ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{loadError}</Text>
+            <TouchableOpacity onPress={load}>
+              <Text style={styles.retry}>Tentar novamente</Text>
             </TouchableOpacity>
-          );
-        }}
-      />
-    </View>
-    <BottomNavigation />
+          </View>
+        ) : null}
+
+        <View style={styles.cardsRow}>
+          <View style={styles.card}>
+            <Text style={styles.cardLabel}>Clientes</Text>
+            <Text style={styles.cardValue}>{overview?.totalClients ?? 0}</Text>
+          </View>
+          <View style={styles.card}>
+            <Text style={styles.cardLabel}>Avaliações</Text>
+            <Text style={styles.cardValue}>{overview?.totalEvaluations ?? 0}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.filterLabel}>Buscar por nome</Text>
+        <TextInput
+          style={styles.search}
+          placeholder="Digite o nome do cliente..."
+          placeholderTextColor="#8b9cb3"
+          value={query}
+          onChangeText={setQuery}
+        />
+        {query.trim().length > 0 && (
+          <Text style={styles.filterCount}>
+            {filteredClients.length} cliente{filteredClients.length !== 1 ? 's' : ''} encontrado
+            {filteredClients.length !== 1 ? 's' : ''}
+          </Text>
+        )}
+
+        <FlatList
+          data={filteredClients}
+          keyExtractor={(item) => item.id.toString()}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          ListEmptyComponent={
+            <Text style={styles.empty}>
+              {clients.length === 0
+                ? 'Cadastre clientes e realize avaliações para gerar relatórios.'
+                : 'Nenhum cliente encontrado.'}
+            </Text>
+          }
+          renderItem={({ item }) => {
+            const latestEval = latestByClient[item.id];
+            return (
+              <TouchableOpacity
+                style={styles.clientCard}
+                onPress={() => router.push(`/client/${item.id}` as never)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.clientName}>{item.name}</Text>
+                <Text style={styles.clientMeta}>
+                  {item.gender === 'MALE'
+                    ? 'Masculino'
+                    : item.gender === 'FEMALE'
+                      ? 'Feminino'
+                      : 'Outro'}
+                  {' · '}
+                  {item.age} anos · {item.height} cm
+                </Text>
+                {latestEval && (
+                  <View style={styles.badges}>
+                    <Text style={styles.badge}>Peso: {latestEval.weight} kg</Text>
+                    <Text style={styles.badge}>Músculo: {latestEval.skeletalMuscle} kg</Text>
+                    <Text style={styles.badge}>
+                      Gordura: {bodyFatPercent(latestEval.weight, latestEval.bodyFat)}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.tapHint}>Toque para abrir relatório →</Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+      <BottomNavigation />
     </View>
   );
 }
@@ -174,4 +209,12 @@ const styles = StyleSheet.create({
   },
   tapHint: { color: '#3b82f6', fontSize: 12, marginTop: 12, fontWeight: '500' },
   empty: { color: '#8b9cb3', textAlign: 'center', marginTop: 40, lineHeight: 22 },
+  errorBox: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(248,113,113,0.12)',
+  },
+  errorText: { color: '#f87171', marginBottom: 6 },
+  retry: { color: '#3b82f6', fontWeight: '600' },
 });

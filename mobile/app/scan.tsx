@@ -11,6 +11,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { api } from '../services/api';
 import { navigateToManualEntry } from '../utils/manualEntryNavigation';
+import { clearScanDraft } from '../services/scanDraft';
 
 function hasMuscleFatData(preview: {
   preview: { muscleFat: { weight?: number; skeletalMuscle?: number; bodyFat?: number } };
@@ -30,9 +31,10 @@ export default function ScanScreen() {
   }, [permission]);
 
   const goToManualEntry = (showHint = true) => {
+    clearScanDraft();
     setScanned(false);
     setProcessing(false);
-    navigateToManualEntry(router, undefined, { showHint });
+    navigateToManualEntry(router, undefined, { showHint, fromScan: false });
   };
 
   const offerManualAfterError = (title: string, message: string) => {
@@ -51,7 +53,10 @@ export default function ScanScreen() {
     try {
       const result = await api.evaluations.scanQr(data);
       setScanned(false);
-      navigateToManualEntry(router, result, { showHint: !hasMuscleFatData(result) });
+      navigateToManualEntry(router, result, {
+        showHint: !hasMuscleFatData(result),
+        fromScan: true,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao processar';
       const isTimeout = message.includes('Tempo esgotado');
@@ -70,11 +75,11 @@ export default function ScanScreen() {
           'QR Code inválido',
           'Este QR Code não é do equipamento TCY. Escaneie o código exibido na tela do aparelho Bodbody.'
         );
-      } else if (message.includes('Relatório não encontrado') || message.includes('não encontrado no equipamento')) {
-        offerManualAfterError(
-          'Relatório indisponível',
-          message
-        );
+      } else if (
+        message.includes('Relatório não encontrado') ||
+        message.includes('não encontrado no equipamento')
+      ) {
+        offerManualAfterError('Relatório indisponível', message);
       } else if (isNetworkError) {
         offerManualAfterError(
           isTimeout ? 'Tempo esgotado' : 'Sem conexão',

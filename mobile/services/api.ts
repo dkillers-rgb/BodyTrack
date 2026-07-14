@@ -1,4 +1,4 @@
-import { clientsRepo, companyRepo, evaluationsRepo, reportsRepo } from '../db/repository';
+﻿import { clientsRepo, companyRepo, evaluationsRepo, reportsRepo } from '../db/repository';
 import { saveCompanyLogo, saveFromUri } from './fileStorage';
 import { processReportFile, toOcrPreview } from './ocrService';
 import { processQrCodeUrl } from './reportApiService';
@@ -59,13 +59,32 @@ export const api = {
       if (!url?.trim()) throw new Error('URL do relatório é obrigatória');
       return processQrCodeUrl(url);
     },
-    /** Offline: copia o arquivo para o armazenamento local e roda OCR (imagens). */
+    /**
+     * Guarda o arquivo localmente.
+     * OCR só corre se `runOcr` for true (pesado — sob pedido).
+     */
     processImage: async (
       uri: string,
       mimeType?: string,
-      fileName?: string
+      fileName?: string,
+      options?: { runOcr?: boolean }
     ): Promise<OcrPreview> => {
       const relativePath = await saveFromUri(uri, mimeType, fileName);
+      const runOcr = options?.runOcr === true;
+      if (!runOcr) {
+        return {
+          imagePath: relativePath,
+          preview: {
+            patient: {},
+            muscleFat: {},
+          },
+          ocr: {
+            rawText:
+              'Arquivo guardado. OCR não executado — preencha os dados ou chame processImage com runOcr: true.',
+          },
+        };
+      }
+
       const ocr = await processReportFile(relativePath, mimeType);
       const preview = toOcrPreview(relativePath, ocr);
 
@@ -83,6 +102,7 @@ export const api = {
   reports: {
     clientDashboard: (clientId: number) => reportsRepo.clientDashboard(clientId),
     overview: () => reportsRepo.overview(),
+    latestByClient: () => reportsRepo.latestByClient(),
   },
   company: {
     get: () => companyRepo.get(),

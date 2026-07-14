@@ -69,12 +69,15 @@
         }
       ],
       "./plugins/withAndroidCleartextTraffic.js",
+      "./plugins/withAndroidWhatsApp.js",
       "./plugins/withAndroidLocalBuild.js",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "storageMode": "local",
+      "apiUrl": "https://bodytrack-ph0z.onrender.com",
       "router": {
         "origin": false
       },

@@ -3,12 +3,11 @@ const path = require('path');
 const { withAndroidManifest, withDangerousMod, AndroidConfig } = require('@expo/config-plugins');
 
 /**
- * Permite HTTP (cleartext) para baixar relatórios dos equipamentos BodyAnalyse/InBody.
- * Os QR codes apontam para IPs como http://119.23.70.228/...
+ * Cleartext HTTP só para hosts da balança/TCY — não para a internet em geral.
  */
 const NETWORK_SECURITY_CONFIG = `<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-  <base-config cleartextTrafficPermitted="true">
+  <base-config cleartextTrafficPermitted="false">
     <trust-anchors>
       <certificates src="system" />
     </trust-anchors>
@@ -16,7 +15,10 @@ const NETWORK_SECURITY_CONFIG = `<?xml version="1.0" encoding="utf-8"?>
   <domain-config cleartextTrafficPermitted="true">
     <domain includeSubdomains="true">bodbody.com.cn</domain>
     <domain includeSubdomains="true">bodbody.cn</domain>
+    <domain includeSubdomains="true">bodbody.com</domain>
     <domain includeSubdomains="false">119.23.70.228</domain>
+    <domain includeSubdomains="false">localhost</domain>
+    <domain includeSubdomains="false">10.0.2.2</domain>
   </domain-config>
 </network-security-config>
 `;

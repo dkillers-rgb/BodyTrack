@@ -164,7 +164,7 @@ export function normalizeBodbodyReport(raw: unknown): BodbodyReportSnapshot | nu
       'musclePercent' in part ? (part as SegmentPart) : segPart(part.muscle, part.fat, sm, segment);
 
     return {
-      ...(r as BodbodyReportSnapshot),
+      ...(r as unknown as BodbodyReportSnapshot),
       section2: ensureSection2VisceralFat((r.section2 as BodbodyReportSnapshot['section2'])),
       section3: {
         bmi: (r.section3 as BodbodyReportSnapshot['section3']).bmi,

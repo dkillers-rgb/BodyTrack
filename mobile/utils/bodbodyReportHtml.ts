@@ -354,6 +354,7 @@ function renderReport(
       <span>${companyName}</span>
       <span>Relatório gerado em ${generatedAt}</span>
     </footer>
+    <p class="disclaimer">Aviso: relatório não é diagnóstico médico, consulte um médico especialista.</p>
   </div>`;
 }
 
@@ -624,6 +625,14 @@ function buildReportStyles(T: ThemeTokens): string {
     border-top: 1px solid ${T.border};
   }
   .footer span:first-child { color: ${T.gold}; font-weight: 600; }
+  .disclaimer {
+    margin-top: 4px;
+    font-size: 7px;
+    line-height: 1.25;
+    color: ${T.muted};
+    text-align: center;
+    opacity: 0.85;
+  }
   @media print {
     html, body { background: ${T.page}; }
     .sheet { min-height: 277mm; }

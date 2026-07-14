@@ -191,6 +191,7 @@ export const clientsRepo = {
 
   async delete(id: number): Promise<void> {
     const db = await getDatabase();
+    await db.runAsync('DELETE FROM evaluations WHERE client_id = ?', [id]);
     await db.runAsync('DELETE FROM clients WHERE id = ?', [id]);
   },
 };
@@ -312,6 +313,7 @@ export const reportsRepo = {
       recentEvaluations: recentRows.map((r) =>
         mapEvaluation(r, {
           id: r.client_id,
+          externalId: String(r.client_id),
           name: r.client_name,
           gender: 'MALE',
           age: 0,
@@ -319,6 +321,25 @@ export const reportsRepo = {
         })
       ),
     };
+  },
+
+  /** Última avaliação de cada cliente (para badges em Relatórios). */
+  async latestByClient(): Promise<Record<number, Evaluation>> {
+    const db = await getDatabase();
+    const rows = await db.getAllAsync<EvaluationRow>(
+      `SELECT e.*
+       FROM evaluations e
+       INNER JOIN (
+         SELECT client_id, MAX(exam_date) AS max_date
+         FROM evaluations
+         GROUP BY client_id
+       ) latest ON latest.client_id = e.client_id AND latest.max_date = e.exam_date`
+    );
+    const map: Record<number, Evaluation> = {};
+    for (const row of rows) {
+      map[row.client_id] = mapEvaluation(row);
+    }
+    return map;
   },
 
   async clientDashboard(clientId: number): Promise<ClientDashboard> {
@@ -348,6 +369,7 @@ export const reportsRepo = {
       ? buildBodbodyReportFromEvaluation(
           {
             id: detail.id,
+            externalId: detail.externalId,
             name: detail.name,
             gender: detail.gender,
             age: detail.age,

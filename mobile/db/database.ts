@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+﻿import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -96,4 +96,14 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
 
 export async function initDatabase(): Promise<void> {
   await getDatabase();
+}
+
+/** Fecha a conexão aberta (necessário antes de copiar/substituir o arquivo .db). */
+export async function closeDatabase(): Promise<void> {
+  if (!db) return;
+  try {
+    await db.closeAsync();
+  } finally {
+    db = null;
+  }
 }

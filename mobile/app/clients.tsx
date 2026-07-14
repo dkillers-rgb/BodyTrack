@@ -37,6 +37,7 @@ export default function ClientsScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<ClientInput>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const router = useRouter();
   const params = useLocalSearchParams<{ create?: string }>();
 
@@ -46,7 +47,13 @@ export default function ClientsScreen() {
   );
 
   const loadClients = useCallback(() => {
-    api.clients.list().then(setClients).catch(console.error);
+    setLoadError(null);
+    api.clients
+      .list()
+      .then(setClients)
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : 'Não foi possível carregar clientes.');
+      });
   }, []);
 
   useEffect(() => {
@@ -55,13 +62,39 @@ export default function ClientsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      loadClients();
       if (params.create === '1') {
         setEditingClient(null);
         setForm(emptyForm);
         setIsCreating(true);
       }
-    }, [params.create])
+    }, [params.create, loadClients])
   );
+
+  const confirmDelete = (client: Client) => {
+    Alert.alert(
+      'Apagar cliente',
+      `Tem a certeza que deseja apagar “${client.name}” e todas as avaliações associadas? Esta ação não se desfaz.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              try {
+                await api.clients.delete(client.id);
+                loadClients();
+                Alert.alert('Cliente apagado', 'O cliente e as avaliações foram removidos.');
+              } catch (err) {
+                Alert.alert('Erro', err instanceof Error ? err.message : 'Falha ao apagar.');
+              }
+            })();
+          },
+        },
+      ]
+    );
+  };
 
   const openEdit = (client: Client) => {
     setEditingClient(client);
@@ -138,6 +171,14 @@ export default function ClientsScreen() {
       <TouchableOpacity style={styles.newClientBtn} onPress={openCreate}>
         <Text style={styles.newClientBtnText}>+ Cadastrar cliente</Text>
       </TouchableOpacity>
+      {loadError ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{loadError}</Text>
+          <TouchableOpacity onPress={loadClients}>
+            <Text style={styles.retry}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
       <TextInput
         style={styles.search}
         placeholder="Buscar por nome, ID, idade..."
@@ -148,6 +189,9 @@ export default function ClientsScreen() {
       <FlatList
         data={filteredClients}
         keyExtractor={(item) => item.id.toString()}
+        initialNumToRender={15}
+        maxToRenderPerBatch={15}
+        windowSize={7}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <TouchableOpacity
@@ -163,6 +207,9 @@ export default function ClientsScreen() {
             </TouchableOpacity>
             <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
               <Text style={styles.editBtnText}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)}>
+              <Text style={styles.deleteBtnText}>Apagar</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -286,13 +333,28 @@ const styles = StyleSheet.create({
   id: { fontSize: 11, color: '#8b9cb3', marginTop: 4, fontFamily: 'monospace' },
   info: { fontSize: 13, color: '#8b9cb3', marginTop: 4 },
   editBtn: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 20,
     borderLeftWidth: 1,
     borderColor: '#2d3a4f',
   },
   editBtnText: { color: '#3b82f6', fontWeight: '600', fontSize: 14 },
+  deleteBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 20,
+    borderLeftWidth: 1,
+    borderColor: '#2d3a4f',
+  },
+  deleteBtnText: { color: '#f87171', fontWeight: '600', fontSize: 14 },
   empty: { color: '#8b9cb3', textAlign: 'center', marginTop: 40 },
+  errorBox: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(248,113,113,0.12)',
+  },
+  errorText: { color: '#f87171', marginBottom: 6 },
+  retry: { color: '#3b82f6', fontWeight: '600' },
   newClientBtn: {
     backgroundColor: '#2563eb',
     borderRadius: 10,

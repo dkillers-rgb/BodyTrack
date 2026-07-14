@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  Pressable,
 } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api, Client } from '../services/api';
 import { getScanDraft, clearScanDraft } from '../services/scanDraft';
@@ -26,6 +29,8 @@ export interface EvaluationFormValues {
 interface ManualEvaluationFormProps {
   initialValues?: Partial<EvaluationFormValues>;
   showHint?: boolean;
+  /** Se true, mantém o draft do QR; se false, limpa qualquer draft residual. */
+  keepScanDraft?: boolean;
   imagePath?: string;
   rawOcrText?: string;
   onSaved?: (clientId: number) => void;
@@ -36,9 +41,30 @@ function defaultExamDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function parseDateInput(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12);
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+function formatDateInput(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function parsePositiveNumber(raw: string): number | null {
+  const n = parseFloat(raw.replace(',', '.'));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
 export function ManualEvaluationForm({
   initialValues,
   showHint = false,
+  keepScanDraft = false,
   imagePath,
   rawOcrText,
   onSaved,
@@ -47,8 +73,10 @@ export function ManualEvaluationForm({
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [form, setForm] = useState<EvaluationFormValues>({
     examDate: initialValues?.examDate || defaultExamDate(),
     weight: initialValues?.weight || '',
@@ -56,13 +84,25 @@ export function ManualEvaluationForm({
     bodyFat: initialValues?.bodyFat || '',
     visceralFat: initialValues?.visceralFat || '',
   });
+  const draftClearedRef = useRef(false);
+
+  useEffect(() => {
+    if (draftClearedRef.current) return;
+    draftClearedRef.current = true;
+    if (!keepScanDraft) {
+      clearScanDraft();
+    }
+  }, [keepScanDraft]);
 
   const loadClients = useCallback(() => {
     setLoadingClients(true);
+    setLoadError(null);
     api.clients
       .list()
       .then(setClients)
-      .catch(console.error)
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : 'Não foi possível carregar clientes.');
+      })
       .finally(() => setLoadingClients(false));
   }, []);
 
@@ -80,25 +120,51 @@ export function ManualEvaluationForm({
     router.push({ pathname: '/clients', params: { create: '1' } } as never);
   };
 
+  const handleDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selected) {
+      setForm((prev) => ({ ...prev, examDate: formatDateInput(selected) }));
+    }
+  };
+
   const canSave =
     !!selectedClientId &&
     !!form.examDate &&
-    !!form.weight &&
-    Number.isFinite(parseFloat(form.weight.replace(',', '.'))) &&
-    parseFloat(form.weight.replace(',', '.')) > 0;
+    parsePositiveNumber(form.weight) != null &&
+    parsePositiveNumber(form.skeletalMuscle) != null &&
+    parsePositiveNumber(form.bodyFat) != null;
+
+  const handleCancel = () => {
+    clearScanDraft();
+    onCancel?.();
+  };
 
   const handleSave = async () => {
-    if (!selectedClientId || !canSave) return;
+    if (!selectedClientId) return;
 
-    const weight = parseFloat(form.weight.replace(',', '.'));
-    const skeletalMuscle = parseFloat(form.skeletalMuscle.replace(',', '.')) || 0;
-    const bodyFat = parseFloat(form.bodyFat.replace(',', '.')) || 0;
+    const weight = parsePositiveNumber(form.weight);
+    const skeletalMuscle = parsePositiveNumber(form.skeletalMuscle);
+    const bodyFat = parsePositiveNumber(form.bodyFat);
+
+    if (weight == null) {
+      Alert.alert('Dados incompletos', 'Informe o peso (kg).');
+      return;
+    }
+    if (skeletalMuscle == null) {
+      Alert.alert('Dados incompletos', 'Informe o músculo esquelético (kg). Não pode ficar vazio nem zero.');
+      return;
+    }
+    if (bodyFat == null) {
+      Alert.alert('Dados incompletos', 'Informe a gordura corporal (kg). Não pode ficar vazia nem zero.');
+      return;
+    }
+
     const visceralParsed = parseFloat(form.visceralFat.replace(',', '.'));
-    const visceralFat = Number.isFinite(visceralParsed) ? visceralParsed : undefined;
+    const visceralFat = Number.isFinite(visceralParsed) && visceralParsed > 0 ? visceralParsed : undefined;
 
     setSaving(true);
     try {
-      const draft = getScanDraft();
+      const draft = keepScanDraft ? getScanDraft() : null;
       const rawReportJson = draft?.bodbodyReport
         ? JSON.stringify(draft.bodbodyReport)
         : draft?.rawCodeValue;
@@ -119,6 +185,8 @@ export function ManualEvaluationForm({
       });
       clearScanDraft();
       onSaved?.(result.clientId);
+    } catch (err) {
+      Alert.alert('Erro', err instanceof Error ? err.message : 'Não foi possível salvar a avaliação.');
     } finally {
       setSaving(false);
     }
@@ -128,6 +196,17 @@ export function ManualEvaluationForm({
     return (
       <View style={styles.loading}>
         <ActivityIndicator color="#3b82f6" size="large" />
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={styles.loading}>
+        <Text style={styles.errorText}>{loadError}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={loadClients}>
+          <Text style={styles.retryBtnText}>Tentar novamente</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -161,14 +240,29 @@ export function ManualEvaluationForm({
           <Text style={styles.sectionTitle}>Muscle Fat Analysis</Text>
 
           <Text style={styles.fieldLabel}>Data do exame *</Text>
-          <TextInput
+          <Pressable
             style={styles.input}
-            value={form.examDate}
-            onChangeText={(examDate) => setForm((prev) => ({ ...prev, examDate }))}
-            placeholder="AAAA-MM-DD"
-            placeholderTextColor="#64748b"
-            editable={!saving}
-          />
+            onPress={() => setShowDatePicker(true)}
+            disabled={saving}
+          >
+            <Text style={styles.dateText}>
+              {parseDateInput(form.examDate).toLocaleDateString('pt-BR')}
+            </Text>
+          </Pressable>
+          {showDatePicker && (
+            <DateTimePicker
+              value={parseDateInput(form.examDate)}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+          {Platform.OS === 'ios' && showDatePicker ? (
+            <TouchableOpacity style={styles.dateDone} onPress={() => setShowDatePicker(false)}>
+              <Text style={styles.dateDoneText}>Confirmar data</Text>
+            </TouchableOpacity>
+          ) : null}
 
           <Text style={styles.fieldLabel}>Peso (kg) *</Text>
           <TextInput
@@ -181,7 +275,7 @@ export function ManualEvaluationForm({
             editable={!saving}
           />
 
-          <Text style={styles.fieldLabel}>Músculo esquelético (kg)</Text>
+          <Text style={styles.fieldLabel}>Músculo esquelético (kg) *</Text>
           <TextInput
             style={styles.input}
             value={form.skeletalMuscle}
@@ -192,7 +286,7 @@ export function ManualEvaluationForm({
             editable={!saving}
           />
 
-          <Text style={styles.fieldLabel}>Gordura corporal (kg)</Text>
+          <Text style={styles.fieldLabel}>Gordura corporal (kg) *</Text>
           <TextInput
             style={styles.input}
             value={form.bodyFat}
@@ -224,7 +318,7 @@ export function ManualEvaluationForm({
         </TouchableOpacity>
 
         {onCancel && (
-          <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} disabled={saving}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} disabled={saving}>
             <Text style={styles.cancelBtnText}>Cancelar</Text>
           </TouchableOpacity>
         )}
@@ -236,7 +330,15 @@ export function ManualEvaluationForm({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  errorText: { color: '#f87171', textAlign: 'center', marginBottom: 16 },
+  retryBtn: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  retryBtnText: { color: '#fff', fontWeight: '600' },
   hint: {
     color: '#fbbf24',
     fontSize: 14,
@@ -272,7 +374,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: '#e8edf4',
     fontSize: 15,
+    justifyContent: 'center',
   },
+  dateText: { color: '#e8edf4', fontSize: 15 },
+  dateDone: { alignItems: 'flex-end', marginTop: 8 },
+  dateDoneText: { color: '#3b82f6', fontWeight: '600' },
   saveBtn: {
     backgroundColor: '#22c55e',
     borderRadius: 10,

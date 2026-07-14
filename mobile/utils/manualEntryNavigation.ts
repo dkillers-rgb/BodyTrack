@@ -11,12 +11,15 @@ function toDateInputValue(value?: string): string {
 export function navigateToManualEntry(
   router: Router,
   preview?: OcrPreview,
-  options?: { showHint?: boolean }
+  options?: { showHint?: boolean; fromScan?: boolean }
 ): void {
   const params: Record<string, string> = {};
 
   if (options?.showHint) {
     params.showHint = '1';
+  }
+  if (options?.fromScan || preview) {
+    params.fromScan = '1';
   }
 
   if (preview) {

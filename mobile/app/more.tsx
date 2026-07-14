@@ -23,6 +23,20 @@ export default function MoreScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+          onPress={() => router.push('/account' as never)}
+        >
+          <View style={[styles.iconWrap, { backgroundColor: 'rgba(91,142,255,0.15)' }]}>
+            <Ionicons name="person-circle-outline" size={22} color={T.primary} />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.cardTitle}>Conta e senha</Text>
+            <Text style={styles.cardDesc}>Alterar senha ou terminar sessão</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={T.textDisabled} />
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
           onPress={() => router.push('/company' as never)}
         >
           <View style={[styles.iconWrap, { backgroundColor: 'rgba(199,162,90,0.15)' }]}>
@@ -31,6 +45,34 @@ export default function MoreScreen() {
           <View style={styles.textWrap}>
             <Text style={styles.cardTitle}>Empresa</Text>
             <Text style={styles.cardDesc}>Logo, endereço e telefone</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={T.textDisabled} />
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+          onPress={() => router.push('/backup' as never)}
+        >
+          <View style={[styles.iconWrap, { backgroundColor: 'rgba(91,142,255,0.15)' }]}>
+            <Ionicons name="shield-checkmark-outline" size={22} color={T.primary} />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.cardTitle}>Backup e restauração</Text>
+            <Text style={styles.cardDesc}>Cópias locais diárias neste aparelho</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={T.textDisabled} />
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+          onPress={() => router.push('/privacy' as never)}
+        >
+          <View style={[styles.iconWrap, { backgroundColor: 'rgba(45,212,191,0.15)' }]}>
+            <Ionicons name="document-text-outline" size={22} color="#2DD4BF" />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.cardTitle}>Aviso e privacidade</Text>
+            <Text style={styles.cardDesc}>Uso do app, dados e aviso médico</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={T.textDisabled} />
         </Pressable>
@@ -45,6 +87,10 @@ export default function MoreScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={T.textDisabled} />
         </Pressable>
+
+        <Text style={styles.footerDisclaimer}>
+          Aviso: relatório não é diagnóstico médico, consulte um médico especialista.
+        </Text>
       </View>
       <BottomNavigation />
     </View>
@@ -78,4 +124,12 @@ const styles = StyleSheet.create({
   textWrap: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '600', color: T.text },
   cardDesc: { fontSize: 13, color: T.textSecondary, marginTop: 2 },
+  footerDisclaimer: {
+    fontSize: 9,
+    lineHeight: 12,
+    color: 'rgba(148,163,184,0.55)',
+    textAlign: 'center',
+    marginTop: 20,
+    paddingHorizontal: 8,
+  },
 });

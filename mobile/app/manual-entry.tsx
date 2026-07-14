@@ -1,6 +1,7 @@
 import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ManualEvaluationForm } from '../components/ManualEvaluationForm';
+import { clearScanDraft } from '../services/scanDraft';
 
 export default function ManualEntryScreen() {
   const router = useRouter();
@@ -13,7 +14,10 @@ export default function ManualEntryScreen() {
     imagePath?: string;
     rawOcrText?: string;
     showHint?: string;
+    fromScan?: string;
   }>();
+
+  const keepScanDraft = params.fromScan === '1';
 
   return (
     <ManualEvaluationForm
@@ -25,6 +29,7 @@ export default function ManualEntryScreen() {
         visceralFat: params.visceralFat,
       }}
       showHint={params.showHint === '1'}
+      keepScanDraft={keepScanDraft}
       imagePath={params.imagePath}
       rawOcrText={params.rawOcrText}
       onSaved={(clientId) => {
@@ -32,7 +37,10 @@ export default function ManualEntryScreen() {
           { text: 'OK', onPress: () => router.replace(`/client/${clientId}` as never) },
         ]);
       }}
-      onCancel={() => router.back()}
+      onCancel={() => {
+        clearScanDraft();
+        router.back();
+      }}
     />
   );
 }

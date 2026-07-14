@@ -17,6 +17,7 @@ export default function ClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<ClientDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -24,10 +25,13 @@ export default function ClientDetailScreen() {
     const clientId = parseInt(id, 10);
     if (Number.isNaN(clientId)) return;
     setLoading(true);
+    setLoadError(null);
     api.reports
       .clientDashboard(clientId)
       .then(setData)
-      .catch(console.error)
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : 'Não foi possível carregar o relatório.');
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -64,7 +68,11 @@ export default function ClientDetailScreen() {
   }
 
   if (!data) {
-    return <Text style={styles.error}>Cliente não encontrado</Text>;
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.error}>{loadError || 'Cliente não encontrado'}</Text>
+      </View>
+    );
   }
 
   return (

@@ -25,6 +25,12 @@ $env:NODE_ENV = "production"
 
 Set-Location $MobileRoot
 
+Write-Host ">> Testes minimos (smoke)..."
+npm test
+if ($LASTEXITCODE -ne 0) {
+  throw "Testes falharam. Corrija antes de gerar o APK."
+}
+
 Write-Host ">> Instalando dependencias npm do app mobile..."
 Set-Location $MobileRoot
 npm install

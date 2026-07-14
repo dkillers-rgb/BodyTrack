@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>BodyTrack Mobile — Avaliação comercial</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      color: #0f172a;
+      font-size: 11pt;
+      line-height: 1.45;
+    }
+    h1 {
+      font-size: 20pt;
+      color: #0B1A2E;
+      margin-bottom: 4px;
+    }
+    .gold { color: #9a7b3c; font-weight: 700; }
+    .sub {
+      color: #64748b;
+      font-size: 10pt;
+      margin-bottom: 16px;
+    }
+    .score-box {
+      background: #0B1A2E;
+      color: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 14px 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .score-box .big {
+      font-size: 28pt;
+      font-weight: 800;
+      color: #C7A25A;
+      line-height: 1;
+    }
+    .score-box .label {
+      font-size: 11pt;
+      color: #e2e8f0;
+      margin-top: 4px;
+    }
+    h2 {
+      font-size: 12.5pt;
+      color: #0B1A2E;
+      border-bottom: 1.5px solid #C7A25A;
+      padding-bottom: 4px;
+      margin: 18px 0 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 12px;
+      font-size: 10.5pt;
+    }
+    th, td {
+      border: 1px solid #dbe3ef;
+      padding: 7px 9px;
+      text-align: left;
+    }
+    th {
+      background: #0B1A2E;
+      color: #fff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .num { text-align: right; font-weight: 700; color: #9a7b3c; width: 64px; }
+    ul { margin: 6px 0 10px 18px; }
+    li { margin-bottom: 4px; }
+    .note {
+      background: #f8f5ee;
+      border-left: 3px solid #C7A25A;
+      padding: 10px 12px;
+      margin: 12px 0;
+      font-size: 10pt;
+      color: #334155;
+    }
+    .footer {
+      margin-top: 22px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .ok { color: #15803d; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>BodyTrack Mobile</h1>
+  <p class="sub">Avaliação comercial · Kit com a balança · Sem lojas públicas · 14/07/2026</p>
+
+  <div class="score-box">
+    <div>
+      <div class="big">8,5 / 10</div>
+      <div class="label">PRONTO COM CONDIÇÕES</div>
+    </div>
+    <div style="text-align:right;font-size:10pt;color:#cbd5e1;max-width:240px;">
+      Canal: vendido junto com a balança<br/>
+      Últimos testes automatizados: <span style="color:#C7A25A;font-weight:700;">13/13 OK</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Contexto:</strong> app offline-first, uma conta por aparelho, instalado com o equipamento.
+    O LIMIT 10 do histórico é escolha de desempenho (“Histórico recente”), não falha.
+  </div>
+
+  <h2>1. Scorecard</h2>
+  <table>
+    <thead>
+      <tr><th>Área</th><th class="num">Nota</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Fit kit (balança + aparelho)</td><td class="num">9,0</td></tr>
+      <tr><td>Fluxo QR → avaliação</td><td class="num">8,5</td></tr>
+      <tr><td>Auth / segurança</td><td class="num">8,0</td></tr>
+      <tr><td>Relatório + aviso médico</td><td class="num">8,5</td></tr>
+      <tr><td>Histórico recente</td><td class="num">9,0</td></tr>
+      <tr><td>Backup</td><td class="num">8,0</td></tr>
+      <tr><td>UX</td><td class="num">8,0</td></tr>
+      <tr><td>Testes / release</td><td class="num">7,5</td></tr>
+      <tr><td>Desempenho</td><td class="num">8,0</td></tr>
+      <tr><td><strong>Geral</strong></td><td class="num"><strong>8,5</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. O que está sólido</h2>
+  <ul>
+    <li>Login local, timeout de sessão, senha mínima 8, retry WhatsApp se falhar a abrir</li>
+    <li>QR TCY → API → formulário (teste: 76,1 / 23,8 / 32,4 kg — gravação válida)</li>
+    <li>Aviso médico discreto no app e no PDF; tela Aviso e privacidade</li>
+    <li>Histórico recente rotulado (últimas 10)</li>
+    <li>Backup cifrado na exportação; smoke tests no build do APK</li>
+    <li>Última bateria: smoke 8/8 + QR + API TCY 200 ≈ 680 ms = <span class="ok">13/13</span></li>
+  </ul>
+
+  <h2>3. Gaps restantes</h2>
+  <table>
+    <thead>
+      <tr><th>Nível</th><th>Item</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Alta</td><td>Smoke tests ainda leves; validar IP da balança na LAN real do cliente</td></tr>
+      <tr><td>Média</td><td>Base SQLite ativa em claro no tablet (backups sim são cifados)</td></tr>
+      <tr><td>Média</td><td>Recuperação depende do WhatsApp instalado</td></tr>
+      <tr><td>Baixa</td><td>Detalhes de copy / config legado</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:10pt;color:#64748b;">LIMIT 10 do histórico <strong>não</strong> é considerado falha.</p>
+
+  <h2>4. Pode vender no kit?</h2>
+  <p><strong>Sim</strong>, se na entrega:</p>
+  <ul>
+    <li>Rede/IP da balança ok no aparelho</li>
+    <li>WhatsApp instalado (recuperação de senha)</li>
+    <li>Conta criada + treino de backup com senha</li>
+    <li>APK gerado com <code>npm test</code> verde</li>
+  </ul>
+
+  <h2>5. Próximos passos opcionais</h2>
+  <ul>
+    <li>Smoke tests mais próximos do código de produção</li>
+    <li>Documentar/ajustar IPs HTTP do kit</li>
+    <li>Unificar aviso médico numa só constante em todos os sítios</li>
+    <li>Folha A4 de uso na entrega (scan, backup, WhatsApp)</li>
+  </ul>
+
+  <div class="footer">
+    BodyTrack Mobile · Avaliação interna · Gerado automaticamente · Não é laudo jurídico nem certificado médico
+  </div>
+</body>
+</html>

@@ -319,6 +319,9 @@ export default function BodbodyReport({ data }: Props) {
           {companyName.toUpperCase()} | Relatório gerado em {new Date().toLocaleString('pt-BR')}
         </Text>
       </View>
+      <Text style={styles.disclaimer}>
+        Aviso: relatório não é diagnóstico médico, consulte um médico especialista.
+      </Text>
     </View>
   );
 }
@@ -503,4 +506,12 @@ const styles = StyleSheet.create({
   },
   footerLogo: { width: 24, height: 16, backgroundColor: '#000', borderRadius: 2 },
   footerText: { fontSize: 10, color: GOLD },
+  disclaimer: {
+    fontSize: 9,
+    lineHeight: 12,
+    color: 'rgba(148,163,184,0.7)',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
 });

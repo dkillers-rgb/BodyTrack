@@ -12,9 +12,9 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { key: 'home', label: 'Home', icon: 'home-outline', route: '/' },
+  { key: 'home', label: 'Início', icon: 'home-outline', route: '/' },
   { key: 'clients', label: 'Clientes', icon: 'people-outline', route: '/clients' },
-  { key: 'evaluations', label: 'Avaliações', icon: 'clipboard-outline', route: '/history' },
+  { key: 'evaluations', label: 'Recentes', icon: 'clipboard-outline', route: '/history' },
   { key: 'reports', label: 'Relatórios', icon: 'bar-chart-outline', route: '/reports' },
   { key: 'more', label: 'Mais', icon: 'ellipsis-horizontal', route: '/more' },
 ];
