@@ -245,7 +245,7 @@ export default function BackupScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.lead}>
           Cópias locais neste aparelho. Enviar / Para PC geram arquivo cifrado com senha. Importar
-          pede a mesma senha. Após 15 min sem uso, o app pede login novamente.
+          pede a mesma senha. Após 24 horas sem uso, o app pede login novamente.
         </Text>
 
         <View style={styles.statusCard}>

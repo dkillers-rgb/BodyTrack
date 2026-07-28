@@ -70,7 +70,7 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>
           {needsSetup
             ? 'Primeiro acesso neste aparelho. Defina usuário, e-mail, WhatsApp e senha.'
-            : 'Faça login para usar o aplicativo. Após 15 min sem uso, será preciso entrar de novo.'}
+            : 'Faça login para usar o aplicativo. Após 24 horas sem uso, será preciso entrar de novo.'}
         </Text>
 
         {needsSetup ? (

@@ -9,6 +9,7 @@ import clientRoutes from './routes/clients';
 import evaluationRoutes from './routes/evaluations';
 import reportRoutes from './routes/reports';
 import externalReportRoutes from './routes/externalReport';
+import mailRoutes from './routes/mail';
 
 // Check desktop mode BEFORE loading dotenv, so we can decide which .env to use
 const isDesktopMode = process.env.BODYTRACK_DESKTOP === '1' || process.env.ELECTRON_RUN_AS_NODE === '1';
@@ -87,7 +88,7 @@ const PORT = Number(process.env.PORT || 3001);
 const corsOptions: cors.CorsOptions = {
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-BodyTrack-Mail-Key'],
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -124,6 +125,7 @@ app.use((err: any, _req: express.Request, res: express.Response, next: express.N
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/mail', mailRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/reports', reportRoutes);

@@ -6,8 +6,8 @@ import type { User } from './types';
 const AUTH_PROFILE_KEY = 'bodytrack_auth_profile_v1';
 const SESSION_KEY = 'bodytrack_auth_session_v1';
 
-/** 15 minutos sem atividade → pede login de novo */
-export const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+/** 24 horas sem atividade → pede login de novo */
+export const INACTIVITY_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 const TEMP_PASSWORD_TTL_MS = 60 * 60 * 1000;
 export const MIN_PASSWORD_LENGTH = 8;
 
