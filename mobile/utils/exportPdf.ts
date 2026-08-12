@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { companyRepo } from '../db/repository';
 import { readLocalFileAsDataUri } from '../services/fileStorage';
 import type { ClientDashboard, CompanySettings } from '../services/types';
-import { buildBodbodyReportHtml } from './bodbodyReportHtml';
+import { buildBodbodyReportHtml, type ReportHtmlTheme } from './bodbodyReportHtml';
 
 async function loadCompanyForReport(): Promise<CompanySettings> {
   const company = await companyRepo.get();
@@ -12,9 +12,12 @@ async function loadCompanyForReport(): Promise<CompanySettings> {
   return { ...company, logoDataUri };
 }
 
-export async function exportReportToPdf(data: ClientDashboard): Promise<void> {
+export async function exportReportToPdf(
+  data: ClientDashboard,
+  theme: ReportHtmlTheme = 'screen'
+): Promise<void> {
   const company = await loadCompanyForReport();
-  const html = buildBodbodyReportHtml(data, company, { theme: 'screen' });
+  const html = buildBodbodyReportHtml(data, company, { theme });
   const { uri } = await Print.printToFileAsync({ html, base64: false });
 
   const slug = data.client.name

@@ -25,8 +25,10 @@ const I = {
   SM_LOW: 22,
   SM_HIGH: 23,
   BMI: 25,
-  BODY_FAT_PCT: 26,
-  BF_PCT_HIGH: 27,
+  BODY_FAT_PCT: 28,
+  BF_PCT_LOW: 29,
+  BF_PCT_HIGH: 30,
+  WAIST_HIP: 31,
   SEG_LA_M: 38,
   SEG_LA_F: 39,
   SEG_RA_M: 40,
@@ -64,6 +66,39 @@ function toNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function pickFirstNumber(values: unknown[], indices: readonly number[]): number | undefined {
+  for (const index of indices) {
+    const value = toNumber(values[index]);
+    if (value != null) return value;
+  }
+  return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value != null && !Array.isArray(value);
+}
+
+function resolveNamedNumericValue(codeValue: unknown, candidateNames: readonly string[]): number | undefined {
+  const raw = typeof codeValue === 'string' ? JSON.parse(codeValue) as unknown[] : codeValue;
+  if (!Array.isArray(raw)) return undefined;
+
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const fieldName = [item.fieldId, item.field_id, item.key, item.name, item.label, item.title]
+      .filter((value): value is string => typeof value === 'string')
+      .join(' | ')
+      .toLowerCase();
+
+    if (candidateNames.some((name) => fieldName.includes(name.toLowerCase()))) {
+      const value = item.value ?? item.amount ?? item.result ?? item.data;
+      const numericValue = toNumber(value);
+      if (numericValue != null) return numericValue;
+    }
+  }
+
+  return undefined;
+}
+
 function rv(value: number, low: number, high: number) {
   return { value, low, high };
 }
@@ -82,6 +117,46 @@ function parseExamDateTime(raw: unknown): { date: string; time?: string } {
     time: match[1],
     date: `${match[2]}-${match[3]}-${match[4]}`,
   };
+}
+
+function findNamedNumericValue(codeValue: unknown, candidateNames: readonly string[]): number | undefined {
+  const raw = typeof codeValue === 'string' ? JSON.parse(codeValue) : codeValue;
+
+  function walk(node: unknown): number | undefined {
+    if (node == null) return undefined;
+    if (typeof node === 'number') return undefined;
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        const found = walk(item);
+        if (found != null) return found;
+      }
+      return undefined;
+    }
+    if (isRecord(node)) {
+      const nameParts: string[] = [];
+      for (const k of ['fieldId', 'field_id', 'key', 'name', 'label', 'title']) {
+        if (k in node && typeof (node as any)[k] === 'string') nameParts.push((node as any)[k]);
+      }
+      const keys = Object.keys(node);
+      const combined = (nameParts.concat(keys)).join(' | ').toLowerCase();
+      if (candidateNames.some((n) => combined.includes(n.toLowerCase()))) {
+        const v = (node as any).value ?? (node as any).amount ?? (node as any).result ?? (node as any).data ?? (node as any).val ?? undefined;
+        const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(String(v).replace(',', '.')) : undefined;
+        if (Number.isFinite(n)) return n;
+      }
+      for (const k of keys) {
+        const found = walk((node as any)[k]);
+        if (found != null) return found;
+      }
+    }
+    return undefined;
+  }
+
+  try {
+    return walk(raw);
+  } catch {
+    return undefined;
+  }
 }
 
 function evalStatus(value: number, low: number, high: number): EvalStatus {
@@ -236,7 +311,9 @@ export function mapCodeValueToBodbodyReport(codeValue: unknown): BodbodyReportSn
   const visceralFat = toNumber(v[I.VISCERAL_FAT_INDEX]) ?? 0;
   const bmi = toNumber(v[I.BMI]) ?? 0;
   const bodyFatPct =
-    toNumber(v[I.BODY_FAT_PCT]) ?? (weight > 0 ? (bodyFatKg / weight) * 100 : 0);
+    resolveNamedNumericValue(codeValue, ['Body Fat Percentage', 'Fat %', 'PBF', 'Body Fat']) ??
+    toNumber(v[I.BODY_FAT_PCT]) ??
+    (weight > 0 ? (bodyFatKg / weight) * 100 : 0);
 
   const smLow = toNumber(v[I.SM_LOW]) ?? skeletalMuscle * 0.9;
   const smHigh = toNumber(v[I.SM_HIGH]) ?? skeletalMuscle * 1.1;
@@ -246,15 +323,29 @@ export function mapCodeValueToBodbodyReport(codeValue: unknown): BodbodyReportSn
   const bfHigh = toNumber(v[I.BF_KG_HIGH]) ?? bodyFatKg * 1.2;
   const bmiLow = 18.5;
   const bmiHigh = 25;
-  const bfPctLow = 10;
+  const bfPctLow = toNumber(v[I.BF_PCT_LOW]) ?? 10;
   const bfPctHigh = toNumber(v[I.BF_PCT_HIGH]) ?? 20;
 
   const moisture = toNumber(v[I.MOISTURE]) ?? weight * 0.45;
   const protein = toNumber(v[I.PROTEIN]) ?? weight * 0.12;
   const minerals = toNumber(v[I.MINERALS]) ?? weight * 0.04;
-  const compFat = toNumber(v[I.BF_KG_HIGH]) ?? bodyFatKg;
+  const compFat = bodyFatKg;
 
-  const waistHip = 0.85;
+  // Tentativa de extrair Body Age (quando presente no codeValue por nome)
+  const maybeBodyAge = resolveNamedNumericValue(codeValue, [
+    'Body Age',
+    'BodyAge',
+    'Age',
+    'Idade',
+    'Idade corporal',
+    'idade corporal',
+  ]);
+
+  const waistHip =
+    resolveNamedNumericValue(codeValue, ['Waist Hip Ratio', 'WHR', 'Waist/Hip Ratio']) ??
+    toNumber(v[I.WAIST_HIP]) ??
+    pickFirstNumber(v, [31, 32, 33]) ??
+    0.85;
   const weightControl = toNumber(v[I.WEIGHT_CONTROL]) ?? 0;
   const targetWeight = Math.round((weight + weightControl) * 10) / 10;
 
@@ -308,6 +399,7 @@ export function mapCodeValueToBodbodyReport(codeValue: unknown): BodbodyReportSn
       weightControl,
       basalMetabolism: toNumber(v[I.BMR]) ?? Math.round(500 + 22 * weight),
       comprehensiveScore: toNumber(v[I.HEALTH_SCORE]) ?? 75,
+      ...(maybeBodyAge != null ? { bodyAge: Math.round(maybeBodyAge) } : {}),
     },
   };
 }
@@ -328,13 +420,17 @@ export function buildBodbodyReportFromEvaluation(
       const parsed = JSON.parse(rawReportJson) as unknown;
       const normalized = normalizeBodbodyReport(parsed);
       if (normalized) {
-        return {
+        const snapshot = {
           ...normalized,
           section2: ensureSection2VisceralFat(
             normalized.section2,
             evaluation.visceralFat ?? normalized.section2.visceralFat?.value ?? 0
           ),
-        };
+        } as BodbodyReportSnapshot;
+        // Ensure bodyAge present or try to extract
+        const maybe = snapshot.section6?.bodyAge ?? findNamedNumericValue(parsed, ['Body Age', 'BodyAge', 'Idade', 'Age', 'idade', 'idade corporal', 'body_age', 'idade_corporal']);
+        if (maybe != null) snapshot.section6 = { ...snapshot.section6, bodyAge: Math.round(maybe) };
+        return snapshot;
       }
       if (
         parsed &&
@@ -342,24 +438,30 @@ export function buildBodbodyReportFromEvaluation(
         'section2' in parsed &&
         (parsed as BodbodyReportSnapshot).section2?.weight != null
       ) {
-        const snapshot = parsed as BodbodyReportSnapshot;
-        return {
-          ...snapshot,
+        const snapshot = {
+          ...(parsed as BodbodyReportSnapshot),
           section2: ensureSection2VisceralFat(
-            snapshot.section2,
-            evaluation.visceralFat ?? snapshot.section2.visceralFat?.value ?? 0
+            (parsed as BodbodyReportSnapshot).section2,
+            evaluation.visceralFat ?? (parsed as BodbodyReportSnapshot).section2.visceralFat?.value ?? 0
           ),
-        };
+        } as BodbodyReportSnapshot;
+        const maybe = snapshot.section6?.bodyAge ?? findNamedNumericValue(parsed, ['Body Age', 'BodyAge', 'Idade', 'Age', 'idade', 'idade corporal', 'body_age', 'idade_corporal']);
+        if (maybe != null) snapshot.section6 = { ...snapshot.section6, bodyAge: Math.round(maybe) };
+        return snapshot;
       }
       const fromCode = mapCodeValueToBodbodyReport(parsed);
-      return {
+      const snapshot = {
         ...fromCode,
         section2: ensureSection2VisceralFat(
           fromCode.section2,
           evaluation.visceralFat ?? fromCode.section2.visceralFat.value
         ),
-      };
-    } catch {
+      } as BodbodyReportSnapshot;
+      const maybe = snapshot.section6?.bodyAge ?? findNamedNumericValue(parsed, ['Body Age', 'BodyAge', 'Idade', 'Age', 'idade', 'idade corporal', 'body_age', 'idade_corporal']);
+      if (maybe != null) snapshot.section6 = { ...snapshot.section6, bodyAge: Math.round(maybe) };
+      return snapshot;
+    } catch (e) {
+      if (e instanceof Error) throw e;
       /* fallback */
     }
   }

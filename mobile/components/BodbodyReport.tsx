@@ -304,12 +304,58 @@ export default function BodbodyReport({ data }: Props) {
         <ControlRow label={REPORT_LABELS.weightControl} value={`${fmt(r.section6.weightControl)} kg`} />
         <ControlRow label={REPORT_LABELS.bmr} value={`${Math.round(r.section6.basalMetabolism)} kcal`} />
         <ControlRow label={REPORT_LABELS.score} value={`${Math.round(r.section6.comprehensiveScore)} / 100`} />
+        {/* Body Age (quando disponível) — exibido abaixo da pontuação geral */}
+        {((r as any)?.section6 as any)?.bodyAge ?? (r as any)?.bodyAge ? (
+          <ControlRow
+            label={REPORT_LABELS.bodyAge}
+            value={`${fmt(((r as any).section6?.bodyAge ?? (r as any).bodyAge) ?? 0, 0)} anos`}
+          />
+        ) : null}
       </View>
 
       <View style={styles.card}>
         <SectionTitle n={7} title={REPORT_LABELS.section7} />
         <EvolutionChart data={chartData} />
       </View>
+
+      {/* Comparativo entre primeira e última avaliação (última - primeira) */}
+      {chartData && chartData.length >= 2 ? (
+        (() => {
+          const sorted = [...chartData].sort((a, b) => a.date.localeCompare(b.date));
+          const first = sorted[0];
+          const last = sorted[sorted.length - 1];
+          const weightDelta = +(last.weight - first.weight).toFixed(1);
+          const muscleDelta = +(last.skeletalMuscle - first.skeletalMuscle).toFixed(1);
+          const firstFatPct = first.weight > 0 ? (first.bodyFat / first.weight) * 100 : 0;
+          const lastFatPct = last.weight > 0 ? (last.bodyFat / last.weight) * 100 : 0;
+          const fatPctDelta = +(lastFatPct - firstFatPct).toFixed(1);
+
+          const fmtChange = (value: number, unit: string) => {
+            if (value === 0) return `sem alteração ${unit}`;
+            const verb = value > 0 ? 'ganhou' : 'perdeu';
+            return `${verb} ${Math.abs(value)} ${unit}`;
+          };
+
+          const weightText = fmtChange(weightDelta, 'kg de peso');
+          const muscleText = fmtChange(muscleDelta, 'kg de massa muscular');
+          const fatText = fatPctDelta === 0 ? 'sem alteração no % de gordura' : (fatPctDelta > 0 ? `aumentou ${Math.abs(fatPctDelta)} pontos percentuais de gordura corporal` : `reduziu ${Math.abs(fatPctDelta)} pontos percentuais de gordura corporal`);
+
+          const periodFrom = new Date(first.date + 'T12:00:00').toLocaleDateString('pt-BR');
+          const periodTo = new Date(last.date + 'T12:00:00').toLocaleDateString('pt-BR');
+
+          return (
+            <View style={[styles.card, styles.comparisonCard]}>
+              <Text style={styles.comparisonTitle}>Comparativo entre avaliações</Text>
+              <Text style={styles.comparisonPeriod}>Período: {periodFrom} → {periodTo}</Text>
+                  <View style={styles.comparisonList}>
+                    <Text style={styles.comparisonItem}>
+                      Você {weightText}, {muscleText} e {fatText}.
+                    </Text>
+                  </View>
+            </View>
+          );
+        })()
+      ) : null}
 
       <View style={styles.footer}>
         {company?.logoPath ? (
@@ -514,4 +560,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
+  comparisonCard: { marginHorizontal: 8, marginBottom: 8, padding: 10, borderWidth: 1, borderColor: BORDER, borderRadius: 4, backgroundColor: CARD },
+  comparisonTitle: { fontSize: 12, fontWeight: '700', color: GOLD, marginBottom: 6 },
+  comparisonPeriod: { fontSize: 11, color: MUTED, marginBottom: 8 },
+  comparisonList: { gap: 4 },
+  comparisonItem: { fontSize: 12, color: TEXT },
 });

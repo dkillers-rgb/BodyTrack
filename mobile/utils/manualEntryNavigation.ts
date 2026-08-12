@@ -1,5 +1,7 @@
 import type { Router } from 'expo-router';
 import type { OcrPreview } from '../services/types';
+import { getScanDraft } from '../services/scanDraft';
+import { findNamedNumeric } from '../services/tcyReportMapper';
 
 function toDateInputValue(value?: string): string {
   if (!value) return new Date().toISOString().slice(0, 10);
@@ -33,6 +35,24 @@ export function navigateToManualEntry(
     if (preview.ocr.rawText) {
       params.rawOcrText = preview.ocr.rawText.slice(0, 4000);
     }
+    // If preview contains bodbodyReport with bodyAge, pass it so ManualEvaluationForm can prefill
+    let maybeBodyAge = (preview as any).bodbodyReport?.section6?.bodyAge ?? (preview as any).bodyAge;
+    // If preview didn't include bodyAge, try to read the transient scan draft (set by report fetch)
+    if (maybeBodyAge == null) {
+      try {
+        const draft = getScanDraft();
+        if (draft) {
+          maybeBodyAge = draft.bodbodyReport?.section6?.bodyAge ?? findNamedNumeric(draft.rawCodeValue ?? '', ['Body Age', 'BodyAge', 'Idade', 'Age', 'idade', 'idade corporal', 'body_age', 'idade_corporal']);
+          // also pull muscle/fat values from draft if preview misses them
+          if (!params.weight && draft.bodbodyReport?.section2?.weight?.value != null) params.weight = String(draft.bodbodyReport.section2.weight.value);
+          if (!params.skeletalMuscle && draft.bodbodyReport?.section2?.skeletalMuscle?.value != null) params.skeletalMuscle = String(draft.bodbodyReport.section2.skeletalMuscle.value);
+          if (!params.bodyFat && draft.bodbodyReport?.section2?.bodyFat?.value != null) params.bodyFat = String(draft.bodbodyReport.section2.bodyFat.value);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    if (maybeBodyAge != null) params.bodyAge = String(maybeBodyAge);
     if (!weight && !skeletalMuscle && !bodyFat) {
       params.showHint = '1';
     }

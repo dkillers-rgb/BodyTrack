@@ -46,6 +46,7 @@ export interface BodbodyReportSnapshot {
     weightControl: number;
     basalMetabolism: number;
     comprehensiveScore: number;
+    bodyAge?: number;
   };
 }
 

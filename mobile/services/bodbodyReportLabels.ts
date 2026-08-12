@@ -35,6 +35,7 @@ export const REPORT_LABELS = {
   weightControl: 'Controle de Peso',
   bmr: 'Taxa Metabólica Basal (TMB)',
   score: 'Pontuação Geral',
+  bodyAge: 'Idade Corporal',
   leftArm: 'Braço E',
   rightArm: 'Braço D',
   trunk: 'Tronco',

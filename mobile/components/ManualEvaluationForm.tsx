@@ -16,6 +16,7 @@ import DateTimePicker, { type DateTimePickerEvent } from '@react-native-communit
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api, Client } from '../services/api';
 import { getScanDraft, clearScanDraft } from '../services/scanDraft';
+import { findNamedNumeric } from '../services/tcyReportMapper';
 import { ClientAutocomplete } from './ClientAutocomplete';
 
 export interface EvaluationFormValues {
@@ -24,6 +25,7 @@ export interface EvaluationFormValues {
   skeletalMuscle: string;
   bodyFat: string;
   visceralFat: string;
+  bodyAge: string;
 }
 
 interface ManualEvaluationFormProps {
@@ -83,6 +85,7 @@ export function ManualEvaluationForm({
     skeletalMuscle: initialValues?.skeletalMuscle || '',
     bodyFat: initialValues?.bodyFat || '',
     visceralFat: initialValues?.visceralFat || '',
+    bodyAge: initialValues?.bodyAge || '',
   });
   const draftClearedRef = useRef(false);
 
@@ -109,6 +112,20 @@ export function ManualEvaluationForm({
   useEffect(() => {
     loadClients();
   }, [loadClients]);
+
+  useEffect(() => {
+    if (!keepScanDraft) return;
+    try {
+      const draft = getScanDraft();
+      if (!draft) return;
+      const bodyAgeFromDraft = draft.bodbodyReport?.section6?.bodyAge ?? findNamedNumeric(draft.rawCodeValue ?? '', ['Body Age', 'BodyAge', 'Idade', 'Age', 'idade', 'idade corporal', 'body_age', 'idade_corporal']);
+      if (bodyAgeFromDraft != null && !form.bodyAge) {
+        setForm((prev) => ({ ...prev, bodyAge: String(Math.round(bodyAgeFromDraft)) }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [keepScanDraft]);
 
   useFocusEffect(
     useCallback(() => {
@@ -159,15 +176,16 @@ export function ManualEvaluationForm({
       return;
     }
 
+    const bodyAgeParsed = parsePositiveNumber(form.bodyAge);
+
     const visceralParsed = parseFloat(form.visceralFat.replace(',', '.'));
     const visceralFat = Number.isFinite(visceralParsed) && visceralParsed > 0 ? visceralParsed : undefined;
 
     setSaving(true);
     try {
       const draft = keepScanDraft ? getScanDraft() : null;
-      const rawReportJson = draft?.bodbodyReport
-        ? JSON.stringify(draft.bodbodyReport)
-        : draft?.rawCodeValue;
+      const rawReportJson = draft?.rawCodeValue ??
+        (draft?.bodbodyReport ? JSON.stringify(draft.bodbodyReport) : undefined);
 
       const result = await api.evaluations.create({
         clientId: selectedClientId,
@@ -175,6 +193,7 @@ export function ManualEvaluationForm({
         weight,
         skeletalMuscle,
         bodyFat,
+        ...(bodyAgeParsed != null ? { bodyAge: bodyAgeParsed } : {}),
         visceralFat:
           visceralFat ??
           draft?.bodbodyReport?.section2.visceralFat?.value ??
@@ -304,6 +323,17 @@ export function ManualEvaluationForm({
             onChangeText={(visceralFat) => setForm((prev) => ({ ...prev, visceralFat }))}
             keyboardType="number-pad"
             placeholder="Ex: 10"
+            placeholderTextColor="#64748b"
+            editable={!saving}
+          />
+
+          <Text style={styles.fieldLabel}>Idade Corporal (Body Age)</Text>
+          <TextInput
+            style={styles.input}
+            value={form.bodyAge}
+            onChangeText={(bodyAge) => setForm((prev) => ({ ...prev, bodyAge }))}
+            keyboardType="number-pad"
+            placeholder="Ex: 45"
             placeholderTextColor="#64748b"
             editable={!saving}
           />

@@ -51,6 +51,7 @@ export interface EvaluationInput {
   skeletalMuscle: number;
   bodyFat: number;
   visceralFat?: number;
+  bodyAge?: number;
   imagePath?: string;
   rawOcrText?: string;
   rawReportJson?: string;

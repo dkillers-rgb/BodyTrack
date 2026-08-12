@@ -37,14 +37,36 @@ export default function ClientDetailScreen() {
 
   const handleExportPdf = async () => {
     if (!data) return;
-    setExporting(true);
-    try {
-      await exportReportToPdf(data);
-    } catch (err) {
-      Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao gerar PDF');
-    } finally {
-      setExporting(false);
-    }
+
+    Alert.alert('Escolha o tema', 'Selecione o tema do PDF', [
+      {
+        text: 'Tema Branco',
+        onPress: async () => {
+          setExporting(true);
+          try {
+            await exportReportToPdf(data, 'print');
+          } catch (err) {
+            Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao gerar PDF');
+          } finally {
+            setExporting(false);
+          }
+        },
+      },
+      {
+        text: 'Tema Escuro',
+        onPress: async () => {
+          setExporting(true);
+          try {
+            await exportReportToPdf(data, 'screen');
+          } catch (err) {
+            Alert.alert('Erro', err instanceof Error ? err.message : 'Erro ao gerar PDF');
+          } finally {
+            setExporting(false);
+          }
+        },
+      },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
   };
 
   const handlePrint = async () => {

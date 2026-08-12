@@ -1,6 +1,7 @@
 import { getDatabase } from './database';
 import { generateLocalAnalysis } from '../services/analysisService';
 import { buildBodbodyReportFromEvaluation } from '../services/bodbodyReportMapper';
+import { findNamedNumeric } from '../services/tcyReportMapper';
 import type {
   Client,
   ClientDetail,
@@ -207,6 +208,72 @@ export const evaluationsRepo = {
     const id = newId();
     const examDate = data.examDate || new Date().toISOString();
 
+    // If bodyAge provided without rawReportJson, synthesize a minimal rawReportJson so mapper can validate/use it.
+    let rawReportJsonToSave: string | undefined = data.rawReportJson ?? undefined;
+    if (!rawReportJsonToSave && data.bodyAge != null) {
+      try {
+        rawReportJsonToSave = JSON.stringify({
+          section2: {
+            weight: data.weight,
+            skeletalMuscle: data.skeletalMuscle,
+            bodyFat: data.bodyFat,
+            visceralFat: data.visceralFat ?? null,
+          },
+          section6: { bodyAge: data.bodyAge },
+        });
+      } catch {
+        rawReportJsonToSave = undefined;
+      }
+    }
+
+    // Ensure that if bodyAge is provided we inject it into the rawReportJson so validator sees it.
+    if (rawReportJsonToSave && data.bodyAge != null) {
+      try {
+        const parsed = JSON.parse(rawReportJsonToSave) as any;
+        if (parsed != null && typeof parsed === 'object') {
+          parsed.section6 = { ...(parsed.section6 || {}), bodyAge: data.bodyAge };
+          rawReportJsonToSave = JSON.stringify(parsed);
+        } else {
+          rawReportJsonToSave = JSON.stringify({
+            section2: {
+              weight: data.weight,
+              skeletalMuscle: data.skeletalMuscle,
+              bodyFat: data.bodyFat,
+              visceralFat: data.visceralFat ?? null,
+            },
+            section6: { bodyAge: data.bodyAge },
+          });
+        }
+      } catch {
+        rawReportJsonToSave = JSON.stringify({
+          section2: {
+            weight: data.weight,
+            skeletalMuscle: data.skeletalMuscle,
+            bodyFat: data.bodyFat,
+            visceralFat: data.visceralFat ?? null,
+          },
+          section6: { bodyAge: data.bodyAge },
+        });
+      }
+    }
+
+    // Validate that if there's a raw report JSON (real or synthesized) it contains Body Age (required)
+    if (rawReportJsonToSave) {
+      const mappedClient = mapClient(client);
+      // buildBodbodyReportFromEvaluation will throw if Body Age is required and missing
+      buildBodbodyReportFromEvaluation(
+        mappedClient,
+        {
+          examDate: examDate,
+          weight: data.weight,
+          skeletalMuscle: data.skeletalMuscle,
+          bodyFat: data.bodyFat,
+          visceralFat: data.visceralFat,
+        },
+        rawReportJsonToSave
+      );
+    }
+
     await db.runAsync(
       `INSERT INTO evaluations
         (id, client_id, exam_date, weight, skeletal_muscle, body_fat, visceral_fat, image_path, raw_ocr_text, raw_report_json)
@@ -221,7 +288,7 @@ export const evaluationsRepo = {
         data.visceralFat ?? null,
         data.imagePath || null,
         data.rawOcrText || null,
-        data.rawReportJson || null,
+        rawReportJsonToSave || null,
       ]
     );
 
@@ -232,6 +299,38 @@ export const evaluationsRepo = {
       [id]
     );
     if (!row) throw new Error('Falha ao salvar avaliação');
+    // Ensure the saved row contains bodyAge in raw_report_json when provided
+    try {
+      if (data.bodyAge != null) {
+        let parsed: any = null;
+        if (row.raw_report_json) {
+          try {
+            parsed = JSON.parse(row.raw_report_json);
+          } catch {
+            parsed = null;
+          }
+        }
+        if (!parsed) {
+          parsed = {
+            section2: {
+              weight: data.weight,
+              skeletalMuscle: data.skeletalMuscle,
+              bodyFat: data.bodyFat,
+              visceralFat: data.visceralFat ?? null,
+            },
+            section6: { bodyAge: data.bodyAge },
+          };
+        } else {
+          parsed.section6 = { ...(parsed.section6 || {}), bodyAge: data.bodyAge };
+        }
+        const updatedJson = JSON.stringify(parsed);
+        if (updatedJson !== row.raw_report_json) {
+          await db.runAsync('UPDATE evaluations SET raw_report_json = ? WHERE id = ?', [updatedJson, id]);
+        }
+      }
+    } catch {
+      // ignore update errors
+    }
     return mapEvaluation(row, mapClient(client));
   },
 };
@@ -379,6 +478,21 @@ export const reportsRepo = {
           latest.rawReportJson
         )
       : undefined;
+
+    // If bodyAge still missing in the normalized snapshot, try to extract from rawReportJson
+    if (bodbodyReport && !(bodbodyReport.section6 && typeof bodbodyReport.section6.bodyAge === 'number')) {
+      try {
+        const raw = latest?.rawReportJson;
+        if (raw) {
+          const found = findNamedNumeric(raw, ['Body Age', 'BodyAge', 'Idade', 'Age', 'idade', 'idade corporal', 'body_age', 'idade_corporal', 'idade_anos', 'age_years', 'idade (anos)']);
+          if (found != null && Number.isFinite(found)) {
+            bodbodyReport.section6 = { ...(bodbodyReport.section6 || {}), bodyAge: Math.round(found) } as any;
+          }
+        }
+      } catch {
+        // ignore extraction errors
+      }
+    }
 
     return {
       client: {

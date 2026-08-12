@@ -228,6 +228,44 @@ function renderReport(
   });
 
   const headerClass = htmlTheme === 'screen' ? 'header header-screen' : 'header';
+  // Comparison: last - first (use full chartData sorted by date)
+  const sortedAll = [...chartData].sort((a, b) => a.date.localeCompare(b.date));
+  const bodyAgeVal = (r as any)?.section6?.bodyAge ?? (r as any)?.bodyAge ?? undefined;
+  const bodyAgeHtml = bodyAgeVal != null ? `<div><span>${REPORT_LABELS.bodyAge}</span><b>${fmt(Number(bodyAgeVal))} anos</b></div>` : '';
+  let comparisonHtml = '';
+  if (sortedAll.length >= 2) {
+    const first = sortedAll[0];
+    const last = sortedAll[sortedAll.length - 1];
+    const weightDelta = +(last.weight - first.weight).toFixed(1);
+    const muscleDelta = +(last.skeletalMuscle - first.skeletalMuscle).toFixed(1);
+    const firstFatPct = first.weight > 0 ? (first.bodyFat / first.weight) * 100 : 0;
+    const lastFatPct = last.weight > 0 ? (last.bodyFat / last.weight) * 100 : 0;
+    const fatPctDelta = +(lastFatPct - firstFatPct).toFixed(1);
+
+    const fmtChange = (value: number, unit: string) => {
+      if (value === 0) return `sem alteração ${unit}`;
+      const verb = value > 0 ? 'ganhou' : 'perdeu';
+      return `${verb} ${Math.abs(value)} ${unit}`;
+    };
+
+    const weightText = fmtChange(weightDelta, 'kg de peso');
+    const muscleText = fmtChange(muscleDelta, 'kg de massa muscular');
+    const fatText = fatPctDelta === 0 ? 'sem alteração no % de gordura' : (fatPctDelta > 0 ? `aumentou ${Math.abs(fatPctDelta)} pontos percentuais de gordura corporal` : `reduziu ${Math.abs(fatPctDelta)} pontos percentuais de gordura corporal`);
+
+    const periodFrom = new Date(first.date + 'T12:00:00').toLocaleDateString('pt-BR');
+    const periodTo = new Date(last.date + 'T12:00:00').toLocaleDateString('pt-BR');
+
+    comparisonHtml = `
+    <section class="card block comparison-block">
+      <h2 class="block-title">Comparativo entre avaliações</h2>
+      <div class="comparison-text">Período: ${periodFrom} → ${periodTo}</div>
+      <div class="comparison-list">
+        <div>Você ${weightText}, ${muscleText} e ${fatText}.</div>
+      </div>
+    </section>
+    `;
+  }
+
   return `
   <div class="sheet">
     <header class="${headerClass}">      <div class="header-brand">
@@ -311,6 +349,10 @@ function renderReport(
         <div class="metric">
           <div class="metric-label">${REPORT_LABELS.waistHip}</div>
           ${gaugeBarHtml(r.section3.waistHip, '', 2)}        </div>
+          <div class="metric">
+            <div class="metric-label">${REPORT_LABELS.bodyAge}</div>
+            <div class="metric-value"><b>${bodyAgeVal != null ? `${Math.round(Number(bodyAgeVal))} anos` : '—'}</b></div>
+          </div>
       </section>
 
       <section class="card block seg-block">
@@ -338,17 +380,20 @@ function renderReport(
       <section class="card block">
         <h2 class="block-title">${REPORT_LABELS.section6}</h2>
         <div class="control-list">
-          <div><span>${REPORT_LABELS.targetWeight}</span><b>${fmt(r.section6.targetWeight)} kg</b></div>
+            <div><span>${REPORT_LABELS.targetWeight}</span><b>${fmt(r.section6.targetWeight)} kg</b></div>
           <div><span>${REPORT_LABELS.weightControl}</span><b>${fmt(r.section6.weightControl)} kg</b></div>
           <div><span>${REPORT_LABELS.bmr}</span><b>${Math.round(r.section6.basalMetabolism)} kcal</b></div>
           <div><span>${REPORT_LABELS.score}</span><b>${Math.round(r.section6.comprehensiveScore)} / 100</b></div>
+          ${bodyAgeHtml}
         </div>
       </section>
     </div>
 
-    <section class="card block chart-block">
+      <section class="card block chart-block">
       <h2 class="block-title">${REPORT_LABELS.section7}</h2>
       <div class="chart-wrap">${buildChartSvg(chartData, theme)}</div>    </section>
+
+    ${comparisonHtml}
 
     <footer class="footer">
       <span>${companyName}</span>
@@ -389,25 +434,51 @@ function buildReportStyles(T: ThemeTokens): string {
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     width: 100%;
-    min-height: 277mm;
+    height: 297mm;
     background: ${T.page};
   }
   body {
     font-family: Inter, Roboto, Arial, Helvetica, sans-serif;
     color: ${T.text};
-    font-size: 10px;
-    line-height: 1.35;
+    font-size: 9px;
+    line-height: 1.25;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    overflow: hidden;
   }
+  /* Sheet: allow content to flow so blocks don't overlap; avoid fixed height */
   .sheet {
     width: 100%;
-    min-height: 277mm;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     background: ${T.page};
+    overflow: visible;
+    page-break-inside: avoid;
   }
+    /* Print-specific compacting to ensure single-page output */
+    @media print {
+      .logo, .logo-fallback { display: none; }
+      .clinic-name { font-size: 12px; }
+      .header { padding: 8px 10px; }
+      .patient { grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 6px 6px; }
+      .comp-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .comp-card { padding: 4px 4px; }
+      .comp-value { font-size: 13px; }
+      .seg-wrap { min-height: 0; }
+      .seg-block { display: none; }
+      .seg-body-svg, .seg-body-svg-fill { max-height: 0; height: 0; }
+      .chart-wrap { min-height: 50px; }
+      .chart-svg { min-height: 50px; max-height: 80px; }
+      .block-title { font-size: 10px; margin-bottom: 6px; }
+      .control-list div { padding: 4px 0; }
+      .control-list b { font-size: 11px; }
+      .comparison-block { margin-top: 6px; }
+      /* Avoid forced scaling which causes layout shifting; let printer handle pagination */
+      .sheet { transform-origin: top left; }
+      /* Ensure footer stays visible and avoid content overflowing to extra pages */
+      html, body, .sheet { height: 100%; }
+    }
   .card {
     background: ${T.card};
     border: 1px solid ${T.border};
@@ -474,7 +545,7 @@ function buildReportStyles(T: ThemeTokens): string {
     margin-bottom: 2px;
   }
   .patient-item b { font-size: 11px; font-weight: 700; color: ${T.text}; }
-  .block { padding: 10px 12px 12px; }
+  .block { padding: 8px 10px 10px; }
   .block-title {
     font-size: 11px;
     font-weight: 600;
@@ -490,9 +561,9 @@ function buildReportStyles(T: ThemeTokens): string {
   }
   .comp-card {
     text-align: center;
-    padding: 10px 6px;
-    border: 1px solid ${T.border};
-    border-radius: 10px;
+    padding: 8px 6px;
+    border: 1px solid ${T.rowBorder};
+    border-radius: 8px;
     background: ${T.compCardBg};
   }
   .comp-icon { font-size: 18px; filter: grayscale(0.2); }
@@ -513,13 +584,14 @@ function buildReportStyles(T: ThemeTokens): string {
     display: grid;
     grid-template-columns: 1fr 1fr 1.05fr;
     gap: 8px;
-    flex: 1;
-    min-height: 0;
+    grid-auto-rows: minmax(0, auto);
+    align-items: start;
   }
   .row-2 {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     gap: 8px;
+    grid-auto-rows: minmax(0, auto);
   }
   .metric { margin-bottom: 10px; }
   .metric:last-child { margin-bottom: 0; }
@@ -577,19 +649,20 @@ function buildReportStyles(T: ThemeTokens): string {
     border-right: 4px solid transparent;
     border-bottom: 6px solid ${T.gold};
   }
-  .seg-block { display: flex; flex-direction: column; min-height: 0; }
+  .seg-block { display: flex; flex-direction: column; min-height: 0; align-items: stretch; }
   .seg-wrap {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 150px;
+    min-height: 80px;
+    max-height: 140px;
   }
   .seg-body-svg, .seg-body-svg-fill {
     display: block;
     width: 100%;
-    height: 100%;
-    max-height: 220px;
+    height: auto;
+    max-height: 120px;
   }
   .eval { width: 100%; border-collapse: collapse; }
   .eval th, .eval td {
@@ -601,7 +674,7 @@ function buildReportStyles(T: ThemeTokens): string {
   .eval th { color: ${T.gold}; font-weight: 600; }
   .eval td:first-child { text-align: left; font-weight: 600; color: ${T.text}; }
   .eval td { color: ${T.gold}; font-weight: 700; }
-  .control-list { display: flex; flex-direction: column; gap: 8px; }
+  .control-list { display: flex; flex-direction: column; gap: 6px; }
   .control-list div {
     display: flex;
     justify-content: space-between;
@@ -612,9 +685,9 @@ function buildReportStyles(T: ThemeTokens): string {
   .control-list div:last-child { border-bottom: none; }
   .control-list span { color: ${T.muted}; font-weight: 500; }
   .control-list b { color: ${T.text}; font-weight: 700; font-size: 12px; }
-  .chart-block { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .chart-wrap { flex: 1; min-height: 100px; }
-  .chart-svg { width: 100%; height: 100%; min-height: 100px; }
+  .chart-block { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .chart-wrap { flex: 1 1 auto; min-height: 48px; max-height: 120px; }
+  .chart-svg { width: 100%; height: auto; min-height: 48px; max-height: 90px; }
   .footer {
     display: flex;
     justify-content: space-between;
